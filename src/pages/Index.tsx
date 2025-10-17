@@ -8,7 +8,31 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Icon from '@/components/ui/icon';
+
+interface ProjectObject {
+  id: string;
+  name: string;
+  region: string;
+  district: string;
+  location: string;
+  coordinates: string;
+  inspection: boolean;
+  poleInstallationPermit: boolean;
+  powerConnectionPermit: boolean;
+  otherPermits: string;
+  equipmentNumber: string;
+  quantity: number;
+  verificationCertificate: boolean;
+  executiveDocumentation: boolean;
+  constructionWork: boolean;
+  commissioningWork: boolean;
+  trafficArrangement: boolean;
+  webUpload: boolean;
+  violationRecording: boolean;
+  notes: string;
+}
 
 interface Project {
   id: string;
@@ -21,6 +45,7 @@ interface Project {
   startDate: string;
   endDate: string;
   stages: Stage[];
+  objects: ProjectObject[];
 }
 
 interface Stage {
@@ -48,6 +73,52 @@ const mockProjects: Project[] = [
       { name: 'Основное строительство', progress: 78, startDate: '2024-05-11', endDate: '2025-06-15', status: 'in-progress' },
       { name: 'Благоустройство', progress: 0, startDate: '2025-06-16', endDate: '2025-08-30', status: 'pending' },
     ],
+    objects: [
+      {
+        id: '1-1',
+        name: 'Участок км 10-15',
+        region: 'Московская область',
+        district: 'Балашихинский',
+        location: 'М-12, км 10-15',
+        coordinates: '55.7558° N, 37.6173° E',
+        inspection: true,
+        poleInstallationPermit: true,
+        powerConnectionPermit: true,
+        otherPermits: 'Разрешение на земляные работы',
+        equipmentNumber: 'CAM-M12-001',
+        quantity: 5,
+        verificationCertificate: true,
+        executiveDocumentation: true,
+        constructionWork: true,
+        commissioningWork: false,
+        trafficArrangement: true,
+        webUpload: false,
+        violationRecording: false,
+        notes: 'Ожидается подключение к сети',
+      },
+      {
+        id: '1-2',
+        name: 'Участок км 15-20',
+        region: 'Московская область',
+        district: 'Балашихинский',
+        location: 'М-12, км 15-20',
+        coordinates: '55.7600° N, 37.6200° E',
+        inspection: true,
+        poleInstallationPermit: false,
+        powerConnectionPermit: false,
+        otherPermits: '',
+        equipmentNumber: 'CAM-M12-002',
+        quantity: 3,
+        verificationCertificate: false,
+        executiveDocumentation: false,
+        constructionWork: false,
+        commissioningWork: false,
+        trafficArrangement: false,
+        webUpload: false,
+        violationRecording: false,
+        notes: 'Требуется согласование ТУ',
+      },
+    ],
   },
   {
     id: '2',
@@ -65,6 +136,30 @@ const mockProjects: Project[] = [
       { name: 'Монтаж пролетов', progress: 12, startDate: '2025-03-01', endDate: '2026-08-15', status: 'in-progress' },
       { name: 'Финишные работы', progress: 0, startDate: '2026-08-16', endDate: '2026-11-20', status: 'pending' },
     ],
+    objects: [
+      {
+        id: '2-1',
+        name: 'Опора №1',
+        region: 'Саратовская область',
+        district: 'Энгельсский',
+        location: 'Мост через Волгу, левый берег',
+        coordinates: '51.4831° N, 46.1153° E',
+        inspection: true,
+        poleInstallationPermit: true,
+        powerConnectionPermit: true,
+        otherPermits: 'Разрешение Росводресурсов',
+        equipmentNumber: 'BRIDGE-V-001',
+        quantity: 1,
+        verificationCertificate: true,
+        executiveDocumentation: true,
+        constructionWork: true,
+        commissioningWork: true,
+        trafficArrangement: true,
+        webUpload: true,
+        violationRecording: false,
+        notes: 'Готово к эксплуатации',
+      },
+    ],
   },
   {
     id: '3',
@@ -81,6 +176,30 @@ const mockProjects: Project[] = [
       { name: 'Прокладка магистралей', progress: 100, startDate: '2024-04-26', endDate: '2024-10-15', status: 'completed' },
       { name: 'Подключение объектов', progress: 95, startDate: '2024-10-16', endDate: '2025-01-10', status: 'in-progress' },
       { name: 'Испытания системы', progress: 40, startDate: '2025-01-11', endDate: '2025-01-25', status: 'in-progress' },
+    ],
+    objects: [
+      {
+        id: '3-1',
+        name: 'Насосная станция №1',
+        region: 'Ленинградская область',
+        district: 'Всеволожский',
+        location: 'пос. Новое Девяткино',
+        coordinates: '60.0500° N, 30.4500° E',
+        inspection: true,
+        poleInstallationPermit: true,
+        powerConnectionPermit: true,
+        otherPermits: 'СЭЗ, пожарная безопасность',
+        equipmentNumber: 'PUMP-LD-001',
+        quantity: 2,
+        verificationCertificate: true,
+        executiveDocumentation: true,
+        constructionWork: true,
+        commissioningWork: true,
+        trafficArrangement: false,
+        webUpload: true,
+        violationRecording: false,
+        notes: 'На стадии испытаний',
+      },
     ],
   },
 ];
@@ -169,6 +288,7 @@ const Index = () => {
           status: 'pending',
         },
       ],
+      objects: [],
     };
 
     setProjects([...projects, project]);
@@ -509,6 +629,107 @@ const Index = () => {
                             </p>
                           </div>
                         </div>
+
+                        {project.objects && project.objects.length > 0 && (
+                          <div className="pt-6 border-t border-border space-y-4">
+                            <h4 className="font-semibold flex items-center gap-2">
+                              <Icon name="MapPin" size={18} />
+                              Объекты проекта
+                            </h4>
+                            <div className="overflow-x-auto rounded-lg border border-border">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="min-w-[150px]">Объект</TableHead>
+                                    <TableHead className="min-w-[120px]">Регион</TableHead>
+                                    <TableHead className="min-w-[120px]">Район</TableHead>
+                                    <TableHead className="min-w-[150px]">Локация</TableHead>
+                                    <TableHead className="min-w-[140px]">Координаты</TableHead>
+                                    <TableHead className="min-w-[110px]">Обследование</TableHead>
+                                    <TableHead className="min-w-[150px]">ТУ на установку опор</TableHead>
+                                    <TableHead className="min-w-[180px]">ТУ на подключение к электропитанию</TableHead>
+                                    <TableHead className="min-w-[140px]">Другие разрешения</TableHead>
+                                    <TableHead className="min-w-[150px]">Номер оборудования</TableHead>
+                                    <TableHead className="min-w-[100px]">Количество</TableHead>
+                                    <TableHead className="min-w-[160px]">Свидетельство о поверке</TableHead>
+                                    <TableHead className="min-w-[180px]">Исполнительная документация</TableHead>
+                                    <TableHead className="min-w-[180px]">Строительно-монтажные работы</TableHead>
+                                    <TableHead className="min-w-[180px]">Пуско-наладочные работы</TableHead>
+                                    <TableHead className="min-w-[90px]">ПОДД</TableHead>
+                                    <TableHead className="min-w-[140px]">Выгрузка в Паутину</TableHead>
+                                    <TableHead className="min-w-[140px]">Фиксация нарушений</TableHead>
+                                    <TableHead className="min-w-[200px]">Примечание</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {project.objects.map((obj) => (
+                                    <TableRow key={obj.id}>
+                                      <TableCell className="font-medium">{obj.name}</TableCell>
+                                      <TableCell>{obj.region}</TableCell>
+                                      <TableCell>{obj.district}</TableCell>
+                                      <TableCell>{obj.location}</TableCell>
+                                      <TableCell className="font-mono text-xs">{obj.coordinates}</TableCell>
+                                      <TableCell>
+                                        <Badge variant={obj.inspection ? 'default' : 'secondary'} className="text-xs">
+                                          {obj.inspection ? 'Выполнено' : 'Не выполнено'}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge variant={obj.poleInstallationPermit ? 'default' : 'secondary'} className="text-xs">
+                                          {obj.poleInstallationPermit ? 'Получено' : 'Не получено'}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge variant={obj.powerConnectionPermit ? 'default' : 'secondary'} className="text-xs">
+                                          {obj.powerConnectionPermit ? 'Получено' : 'Не получено'}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell className="text-xs">{obj.otherPermits || '-'}</TableCell>
+                                      <TableCell className="font-mono text-xs">{obj.equipmentNumber}</TableCell>
+                                      <TableCell>{obj.quantity}</TableCell>
+                                      <TableCell>
+                                        <Badge variant={obj.verificationCertificate ? 'default' : 'secondary'} className="text-xs">
+                                          {obj.verificationCertificate ? 'Есть' : 'Нет'}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge variant={obj.executiveDocumentation ? 'default' : 'secondary'} className="text-xs">
+                                          {obj.executiveDocumentation ? 'Готово' : 'Не готово'}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge variant={obj.constructionWork ? 'default' : 'secondary'} className="text-xs">
+                                          {obj.constructionWork ? 'Завершено' : 'Не завершено'}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge variant={obj.commissioningWork ? 'default' : 'secondary'} className="text-xs">
+                                          {obj.commissioningWork ? 'Завершено' : 'Не завершено'}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge variant={obj.trafficArrangement ? 'default' : 'secondary'} className="text-xs">
+                                          {obj.trafficArrangement ? 'Да' : 'Нет'}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge variant={obj.webUpload ? 'default' : 'secondary'} className="text-xs">
+                                          {obj.webUpload ? 'Выполнено' : 'Не выполнено'}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge variant={obj.violationRecording ? 'default' : 'secondary'} className="text-xs">
+                                          {obj.violationRecording ? 'Да' : 'Нет'}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell className="text-xs max-w-[200px]">{obj.notes || '-'}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </CardContent>
