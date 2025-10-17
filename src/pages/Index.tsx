@@ -208,8 +208,9 @@ const Index = () => {
         </div>
 
         <Tabs defaultValue="projects" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
+          <TabsList className="grid w-full max-w-2xl grid-cols-3 mb-6">
             <TabsTrigger value="projects">Проекты</TabsTrigger>
+            <TabsTrigger value="gantt">График Ганта</TabsTrigger>
             <TabsTrigger value="analytics">Аналитика</TabsTrigger>
           </TabsList>
 
@@ -359,6 +360,174 @@ const Index = () => {
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          <TabsContent value="gantt" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="Calendar" size={20} />
+                  Временная диаграмма проектов
+                </CardTitle>
+                <CardDescription>График Ганта с визуализацией этапов строительства</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-8">
+                  {mockProjects.map((project) => {
+                    const projectStart = new Date(project.startDate).getTime();
+                    const projectEnd = new Date(project.endDate).getTime();
+                    const today = new Date().getTime();
+                    const totalDuration = projectEnd - projectStart;
+                    
+                    return (
+                      <div key={project.id} className="space-y-3 animate-fade-in">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-primary/10 rounded-lg">
+                            <Icon name={getProjectIcon(project.type)} className="text-primary" size={18} />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-semibold">{project.name}</h4>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(project.startDate).toLocaleDateString('ru-RU')} - {new Date(project.endDate).toLocaleDateString('ru-RU')}
+                            </p>
+                          </div>
+                          <Badge variant="outline" className={getStatusColor(project.status)}>
+                            {project.progress}%
+                          </Badge>
+                        </div>
+
+                        <div className="relative pl-4 space-y-2">
+                          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-border" />
+                          
+                          {project.stages.map((stage, idx) => {
+                            const stageStart = new Date(stage.startDate).getTime();
+                            const stageEnd = new Date(stage.endDate).getTime();
+                            const stageDuration = stageEnd - stageStart;
+                            
+                            const offsetPercent = ((stageStart - projectStart) / totalDuration) * 100;
+                            const widthPercent = (stageDuration / totalDuration) * 100;
+                            
+                            const isActive = today >= stageStart && today <= stageEnd;
+                            const isPast = today > stageEnd;
+                            
+                            return (
+                              <div key={idx} className="relative pl-6 pb-4">
+                                <div
+                                  className={`absolute left-0 top-2 h-3 w-3 rounded-full border-2 ${
+                                    stage.status === 'completed'
+                                      ? 'bg-green-500 border-green-500'
+                                      : stage.status === 'in-progress'
+                                      ? 'bg-blue-500 border-blue-500 animate-pulse'
+                                      : 'bg-muted border-border'
+                                  }`}
+                                />
+                                
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <p className="font-medium text-sm">{stage.name}</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {new Date(stage.startDate).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} - {new Date(stage.endDate).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                      </p>
+                                    </div>
+                                    <Badge
+                                      variant="outline"
+                                      className={`text-xs ${
+                                        stage.status === 'completed'
+                                          ? 'bg-green-500/10 text-green-500 border-green-500/20'
+                                          : stage.status === 'in-progress'
+                                          ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                                          : 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+                                      }`}
+                                    >
+                                      {stage.progress}%
+                                    </Badge>
+                                  </div>
+
+                                  <div className="relative h-8 bg-muted/30 rounded-lg overflow-hidden border border-border">
+                                    <div
+                                      className={`absolute top-0 h-full rounded-lg transition-all ${
+                                        stage.status === 'completed'
+                                          ? 'bg-gradient-to-r from-green-500 to-green-600'
+                                          : stage.status === 'in-progress'
+                                          ? 'bg-gradient-to-r from-blue-500 to-blue-600'
+                                          : 'bg-gradient-to-r from-gray-400 to-gray-500'
+                                      }`}
+                                      style={{
+                                        left: `${offsetPercent}%`,
+                                        width: `${widthPercent}%`,
+                                        opacity: stage.status === 'pending' ? 0.3 : 0.8
+                                      }}
+                                    >
+                                      <div className="h-full flex items-center justify-center">
+                                        <div
+                                          className="h-full bg-white/20"
+                                          style={{ width: `${stage.progress}%` }}
+                                        />
+                                      </div>
+                                    </div>
+
+                                    {isActive && (
+                                      <div
+                                        className="absolute top-0 bottom-0 w-0.5 bg-orange-500 z-10"
+                                        style={{
+                                          left: `${((today - projectStart) / totalDuration) * 100}%`
+                                        }}
+                                      >
+                                        <div className="absolute -top-1 -left-1 h-3 w-3 rounded-full bg-orange-500 animate-pulse" />
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center gap-2 text-xs">
+                                    <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                                      <div
+                                        className={`h-full transition-all ${
+                                          stage.status === 'completed'
+                                            ? 'bg-green-500'
+                                            : stage.status === 'in-progress'
+                                            ? 'bg-blue-500'
+                                            : 'bg-gray-400'
+                                        }`}
+                                        style={{ width: `${stage.progress}%` }}
+                                      />
+                                    </div>
+                                    <span className="text-muted-foreground font-medium min-w-[3rem] text-right">
+                                      {stage.progress}%
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-8 pt-6 border-t border-border">
+                  <div className="flex items-center gap-6 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <div className="h-3 w-3 rounded-full bg-green-500" />
+                      <span className="text-sm text-muted-foreground">Завершено</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-3 w-3 rounded-full bg-blue-500 animate-pulse" />
+                      <span className="text-sm text-muted-foreground">В работе</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-3 w-3 rounded-full bg-gray-500" />
+                      <span className="text-sm text-muted-foreground">Запланировано</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-0.5 w-6 bg-orange-500" />
+                      <span className="text-sm text-muted-foreground">Текущая дата</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">
