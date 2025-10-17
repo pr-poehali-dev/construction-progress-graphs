@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import Icon from '@/components/ui/icon';
 
 interface ProjectObject {
@@ -208,12 +210,36 @@ const Index = () => {
   const [projects, setProjects] = useState<Project[]>(mockProjects);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isObjectDialogOpen, setIsObjectDialogOpen] = useState(false);
+  const [editingObject, setEditingObject] = useState<ProjectObject | null>(null);
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [newProject, setNewProject] = useState<Partial<Project>>({
     name: '',
     type: 'road',
     budget: 0,
     startDate: '',
     endDate: '',
+  });
+  const [newObject, setNewObject] = useState<Partial<ProjectObject>>({
+    name: '',
+    region: '',
+    district: '',
+    location: '',
+    coordinates: '',
+    inspection: false,
+    poleInstallationPermit: false,
+    powerConnectionPermit: false,
+    otherPermits: '',
+    equipmentNumber: '',
+    quantity: 1,
+    verificationCertificate: false,
+    executiveDocumentation: false,
+    constructionWork: false,
+    commissioningWork: false,
+    trafficArrangement: false,
+    webUpload: false,
+    violationRecording: false,
+    notes: '',
   });
 
   const getProjectIcon = (type: string) => {
@@ -307,6 +333,154 @@ const Index = () => {
     if (selectedProject?.id === projectId) {
       setSelectedProject(null);
     }
+  };
+
+  const handleAddObject = () => {
+    if (!currentProjectId || !newObject.name) {
+      return;
+    }
+
+    const object: ProjectObject = {
+      id: Date.now().toString(),
+      name: newObject.name || '',
+      region: newObject.region || '',
+      district: newObject.district || '',
+      location: newObject.location || '',
+      coordinates: newObject.coordinates || '',
+      inspection: newObject.inspection || false,
+      poleInstallationPermit: newObject.poleInstallationPermit || false,
+      powerConnectionPermit: newObject.powerConnectionPermit || false,
+      otherPermits: newObject.otherPermits || '',
+      equipmentNumber: newObject.equipmentNumber || '',
+      quantity: newObject.quantity || 1,
+      verificationCertificate: newObject.verificationCertificate || false,
+      executiveDocumentation: newObject.executiveDocumentation || false,
+      constructionWork: newObject.constructionWork || false,
+      commissioningWork: newObject.commissioningWork || false,
+      trafficArrangement: newObject.trafficArrangement || false,
+      webUpload: newObject.webUpload || false,
+      violationRecording: newObject.violationRecording || false,
+      notes: newObject.notes || '',
+    };
+
+    setProjects(
+      projects.map((p) =>
+        p.id === currentProjectId ? { ...p, objects: [...p.objects, object] } : p
+      )
+    );
+
+    resetObjectForm();
+  };
+
+  const handleUpdateObject = () => {
+    if (!currentProjectId || !editingObject) {
+      return;
+    }
+
+    const updatedObject: ProjectObject = {
+      ...editingObject,
+      name: newObject.name || editingObject.name,
+      region: newObject.region || editingObject.region,
+      district: newObject.district || editingObject.district,
+      location: newObject.location || editingObject.location,
+      coordinates: newObject.coordinates || editingObject.coordinates,
+      inspection: newObject.inspection !== undefined ? newObject.inspection : editingObject.inspection,
+      poleInstallationPermit: newObject.poleInstallationPermit !== undefined ? newObject.poleInstallationPermit : editingObject.poleInstallationPermit,
+      powerConnectionPermit: newObject.powerConnectionPermit !== undefined ? newObject.powerConnectionPermit : editingObject.powerConnectionPermit,
+      otherPermits: newObject.otherPermits || editingObject.otherPermits,
+      equipmentNumber: newObject.equipmentNumber || editingObject.equipmentNumber,
+      quantity: newObject.quantity || editingObject.quantity,
+      verificationCertificate: newObject.verificationCertificate !== undefined ? newObject.verificationCertificate : editingObject.verificationCertificate,
+      executiveDocumentation: newObject.executiveDocumentation !== undefined ? newObject.executiveDocumentation : editingObject.executiveDocumentation,
+      constructionWork: newObject.constructionWork !== undefined ? newObject.constructionWork : editingObject.constructionWork,
+      commissioningWork: newObject.commissioningWork !== undefined ? newObject.commissioningWork : editingObject.commissioningWork,
+      trafficArrangement: newObject.trafficArrangement !== undefined ? newObject.trafficArrangement : editingObject.trafficArrangement,
+      webUpload: newObject.webUpload !== undefined ? newObject.webUpload : editingObject.webUpload,
+      violationRecording: newObject.violationRecording !== undefined ? newObject.violationRecording : editingObject.violationRecording,
+      notes: newObject.notes || editingObject.notes,
+    };
+
+    setProjects(
+      projects.map((p) =>
+        p.id === currentProjectId
+          ? {
+              ...p,
+              objects: p.objects.map((obj) => (obj.id === editingObject.id ? updatedObject : obj)),
+            }
+          : p
+      )
+    );
+
+    resetObjectForm();
+  };
+
+  const handleDeleteObject = (projectId: string, objectId: string) => {
+    setProjects(
+      projects.map((p) =>
+        p.id === projectId ? { ...p, objects: p.objects.filter((obj) => obj.id !== objectId) } : p
+      )
+    );
+  };
+
+  const openAddObjectDialog = (projectId: string) => {
+    setCurrentProjectId(projectId);
+    setEditingObject(null);
+    setNewObject({
+      name: '',
+      region: '',
+      district: '',
+      location: '',
+      coordinates: '',
+      inspection: false,
+      poleInstallationPermit: false,
+      powerConnectionPermit: false,
+      otherPermits: '',
+      equipmentNumber: '',
+      quantity: 1,
+      verificationCertificate: false,
+      executiveDocumentation: false,
+      constructionWork: false,
+      commissioningWork: false,
+      trafficArrangement: false,
+      webUpload: false,
+      violationRecording: false,
+      notes: '',
+    });
+    setIsObjectDialogOpen(true);
+  };
+
+  const openEditObjectDialog = (projectId: string, object: ProjectObject) => {
+    setCurrentProjectId(projectId);
+    setEditingObject(object);
+    setNewObject(object);
+    setIsObjectDialogOpen(true);
+  };
+
+  const resetObjectForm = () => {
+    setIsObjectDialogOpen(false);
+    setEditingObject(null);
+    setCurrentProjectId(null);
+    setNewObject({
+      name: '',
+      region: '',
+      district: '',
+      location: '',
+      coordinates: '',
+      inspection: false,
+      poleInstallationPermit: false,
+      powerConnectionPermit: false,
+      otherPermits: '',
+      equipmentNumber: '',
+      quantity: 1,
+      verificationCertificate: false,
+      executiveDocumentation: false,
+      constructionWork: false,
+      commissioningWork: false,
+      trafficArrangement: false,
+      webUpload: false,
+      violationRecording: false,
+      notes: '',
+    });
   };
 
   return (
@@ -630,12 +804,23 @@ const Index = () => {
                           </div>
                         </div>
 
-                        {project.objects && project.objects.length > 0 && (
-                          <div className="pt-6 border-t border-border space-y-4">
+                        <div className="pt-6 border-t border-border space-y-4">
+                          <div className="flex items-center justify-between">
                             <h4 className="font-semibold flex items-center gap-2">
                               <Icon name="MapPin" size={18} />
                               Объекты проекта
                             </h4>
+                            <Button
+                              size="sm"
+                              onClick={() => openAddObjectDialog(project.id)}
+                              className="gap-2"
+                            >
+                              <Icon name="Plus" size={14} />
+                              Добавить объект
+                            </Button>
+                          </div>
+
+                          {project.objects && project.objects.length > 0 && (
                             <div className="overflow-x-auto rounded-lg border border-border">
                               <Table>
                                 <TableHeader>
@@ -659,6 +844,7 @@ const Index = () => {
                                     <TableHead className="min-w-[140px]">Выгрузка в Паутину</TableHead>
                                     <TableHead className="min-w-[140px]">Фиксация нарушений</TableHead>
                                     <TableHead className="min-w-[200px]">Примечание</TableHead>
+                                    <TableHead className="w-[100px]">Действия</TableHead>
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -723,13 +909,33 @@ const Index = () => {
                                         </Badge>
                                       </TableCell>
                                       <TableCell className="text-xs max-w-[200px]">{obj.notes || '-'}</TableCell>
+                                      <TableCell>
+                                        <div className="flex gap-1">
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8"
+                                            onClick={() => openEditObjectDialog(project.id, obj)}
+                                          >
+                                            <Icon name="Pencil" size={14} />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-destructive hover:text-destructive"
+                                            onClick={() => handleDeleteObject(project.id, obj.id)}
+                                          >
+                                            <Icon name="Trash2" size={14} />
+                                          </Button>
+                                        </div>
+                                      </TableCell>
                                     </TableRow>
                                   ))}
                                 </TableBody>
                               </Table>
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
                     )}
                   </CardContent>
@@ -1022,6 +1228,208 @@ const Index = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      <Dialog open={isObjectDialogOpen} onOpenChange={setIsObjectDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingObject ? 'Редактировать объект' : 'Новый объект'}</DialogTitle>
+            <DialogDescription>
+              Заполните информацию об объекте строительства
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-6 py-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="obj-name">Название объекта *</Label>
+                <Input
+                  id="obj-name"
+                  placeholder="Например: Участок км 10-15"
+                  value={newObject.name}
+                  onChange={(e) => setNewObject({ ...newObject, name: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="region">Регион</Label>
+                <Input
+                  id="region"
+                  placeholder="Московская область"
+                  value={newObject.region}
+                  onChange={(e) => setNewObject({ ...newObject, region: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="district">Район</Label>
+                <Input
+                  id="district"
+                  placeholder="Балашихинский"
+                  value={newObject.district}
+                  onChange={(e) => setNewObject({ ...newObject, district: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="location">Локация</Label>
+                <Input
+                  id="location"
+                  placeholder="М-12, км 10-15"
+                  value={newObject.location}
+                  onChange={(e) => setNewObject({ ...newObject, location: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="coordinates">Координаты</Label>
+                <Input
+                  id="coordinates"
+                  placeholder="55.7558° N, 37.6173° E"
+                  value={newObject.coordinates}
+                  onChange={(e) => setNewObject({ ...newObject, coordinates: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="equipment">Номер оборудования</Label>
+                <Input
+                  id="equipment"
+                  placeholder="CAM-M12-001"
+                  value={newObject.equipmentNumber}
+                  onChange={(e) => setNewObject({ ...newObject, equipmentNumber: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="quantity">Количество</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  min="1"
+                  value={newObject.quantity}
+                  onChange={(e) => setNewObject({ ...newObject, quantity: Number(e.target.value) })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="other-permits">Другие разрешения</Label>
+                <Input
+                  id="other-permits"
+                  placeholder="Разрешение на земляные работы"
+                  value={newObject.otherPermits}
+                  onChange={(e) => setNewObject({ ...newObject, otherPermits: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 p-4 border border-border rounded-lg">
+              <h4 className="font-semibold text-sm">Статусы выполнения</h4>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="inspection"
+                    checked={newObject.inspection}
+                    onCheckedChange={(checked) => setNewObject({ ...newObject, inspection: !!checked })}
+                  />
+                  <Label htmlFor="inspection" className="cursor-pointer">Обследование</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="pole-permit"
+                    checked={newObject.poleInstallationPermit}
+                    onCheckedChange={(checked) => setNewObject({ ...newObject, poleInstallationPermit: !!checked })}
+                  />
+                  <Label htmlFor="pole-permit" className="cursor-pointer">ТУ на установку опор</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="power-permit"
+                    checked={newObject.powerConnectionPermit}
+                    onCheckedChange={(checked) => setNewObject({ ...newObject, powerConnectionPermit: !!checked })}
+                  />
+                  <Label htmlFor="power-permit" className="cursor-pointer">ТУ на подключение к электропитанию</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="verification"
+                    checked={newObject.verificationCertificate}
+                    onCheckedChange={(checked) => setNewObject({ ...newObject, verificationCertificate: !!checked })}
+                  />
+                  <Label htmlFor="verification" className="cursor-pointer">Свидетельство о поверке</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="executive-docs"
+                    checked={newObject.executiveDocumentation}
+                    onCheckedChange={(checked) => setNewObject({ ...newObject, executiveDocumentation: !!checked })}
+                  />
+                  <Label htmlFor="executive-docs" className="cursor-pointer">Исполнительная документация</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="construction"
+                    checked={newObject.constructionWork}
+                    onCheckedChange={(checked) => setNewObject({ ...newObject, constructionWork: !!checked })}
+                  />
+                  <Label htmlFor="construction" className="cursor-pointer">Строительно-монтажные работы</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="commissioning"
+                    checked={newObject.commissioningWork}
+                    onCheckedChange={(checked) => setNewObject({ ...newObject, commissioningWork: !!checked })}
+                  />
+                  <Label htmlFor="commissioning" className="cursor-pointer">Пуско-наладочные работы</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="traffic"
+                    checked={newObject.trafficArrangement}
+                    onCheckedChange={(checked) => setNewObject({ ...newObject, trafficArrangement: !!checked })}
+                  />
+                  <Label htmlFor="traffic" className="cursor-pointer">ПОДД</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="web-upload"
+                    checked={newObject.webUpload}
+                    onCheckedChange={(checked) => setNewObject({ ...newObject, webUpload: !!checked })}
+                  />
+                  <Label htmlFor="web-upload" className="cursor-pointer">Выгрузка в Паутину</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="violations"
+                    checked={newObject.violationRecording}
+                    onCheckedChange={(checked) => setNewObject({ ...newObject, violationRecording: !!checked })}
+                  />
+                  <Label htmlFor="violations" className="cursor-pointer">Фиксация нарушений</Label>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="notes">Примечание</Label>
+              <Textarea
+                id="notes"
+                placeholder="Дополнительная информация об объекте"
+                rows={3}
+                value={newObject.notes}
+                onChange={(e) => setNewObject({ ...newObject, notes: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={resetObjectForm}>
+              Отмена
+            </Button>
+            <Button onClick={editingObject ? handleUpdateObject : handleAddObject}>
+              {editingObject ? 'Сохранить изменения' : 'Добавить объект'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
