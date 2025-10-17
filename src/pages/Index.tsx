@@ -3,6 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Icon from '@/components/ui/icon';
 
 interface Project {
@@ -81,7 +86,16 @@ const mockProjects: Project[] = [
 ];
 
 const Index = () => {
+  const [projects, setProjects] = useState<Project[]>(mockProjects);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newProject, setNewProject] = useState<Partial<Project>>({
+    name: '',
+    type: 'road',
+    budget: 0,
+    startDate: '',
+    endDate: '',
+  });
 
   const getProjectIcon = (type: string) => {
     switch (type) {
@@ -131,6 +145,50 @@ const Index = () => {
     }).format(value);
   };
 
+  const handleAddProject = () => {
+    if (!newProject.name || !newProject.startDate || !newProject.endDate) {
+      return;
+    }
+
+    const project: Project = {
+      id: Date.now().toString(),
+      name: newProject.name,
+      type: newProject.type as 'road' | 'bridge' | 'utility',
+      progress: 0,
+      budget: newProject.budget || 0,
+      spent: 0,
+      status: 'on-track',
+      startDate: newProject.startDate,
+      endDate: newProject.endDate,
+      stages: [
+        {
+          name: 'Проектирование',
+          progress: 0,
+          startDate: newProject.startDate,
+          endDate: newProject.startDate,
+          status: 'pending',
+        },
+      ],
+    };
+
+    setProjects([...projects, project]);
+    setIsDialogOpen(false);
+    setNewProject({
+      name: '',
+      type: 'road',
+      budget: 0,
+      startDate: '',
+      endDate: '',
+    });
+  };
+
+  const handleDeleteProject = (projectId: string) => {
+    setProjects(projects.filter((p) => p.id !== projectId));
+    if (selectedProject?.id === projectId) {
+      setSelectedProject(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
@@ -148,8 +206,89 @@ const Index = () => {
             <div className="flex items-center gap-4">
               <Badge variant="outline" className="px-3 py-1">
                 <Icon name="Activity" className="mr-2" size={14} />
-                {mockProjects.length} проектов
+                {projects.length} проектов
               </Badge>
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="gap-2">
+                    <Icon name="Plus" size={16} />
+                    Добавить проект
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[500px]">
+                  <DialogHeader>
+                    <DialogTitle>Новый проект</DialogTitle>
+                    <DialogDescription>
+                      Заполните информацию о строительном проекте
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="name">Название проекта</Label>
+                      <Input
+                        id="name"
+                        placeholder="Например: Мост через реку Дон"
+                        value={newProject.name}
+                        onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="type">Тип проекта</Label>
+                      <Select
+                        value={newProject.type}
+                        onValueChange={(value) => setNewProject({ ...newProject, type: value as 'road' | 'bridge' | 'utility' })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите тип" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="road">Дорога</SelectItem>
+                          <SelectItem value="bridge">Мост</SelectItem>
+                          <SelectItem value="utility">Коммуникации</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="budget">Бюджет (₽)</Label>
+                      <Input
+                        id="budget"
+                        type="number"
+                        placeholder="0"
+                        value={newProject.budget || ''}
+                        onChange={(e) => setNewProject({ ...newProject, budget: Number(e.target.value) })}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="startDate">Дата начала</Label>
+                        <Input
+                          id="startDate"
+                          type="date"
+                          value={newProject.startDate}
+                          onChange={(e) => setNewProject({ ...newProject, startDate: e.target.value })}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="endDate">Дата окончания</Label>
+                        <Input
+                          id="endDate"
+                          type="date"
+                          value={newProject.endDate}
+                          onChange={(e) => setNewProject({ ...newProject, endDate: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                      Отмена
+                    </Button>
+                    <Button onClick={handleAddProject}>
+                      Создать проект
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </div>
@@ -183,7 +322,7 @@ const Index = () => {
             </CardHeader>
             <CardContent>
               <div className="text-4xl font-bold mb-1">
-                {Math.round(mockProjects.reduce((acc, p) => acc + p.progress, 0) / mockProjects.length)}%
+                {projects.length > 0 ? Math.round(projects.reduce((acc, p) => acc + p.progress, 0) / projects.length) : 0}%
               </div>
               <p className="text-sm text-muted-foreground">По всем объектам</p>
             </CardContent>
@@ -200,7 +339,7 @@ const Index = () => {
             </CardHeader>
             <CardContent>
               <div className="text-4xl font-bold mb-1">
-                {mockProjects.filter((p) => p.status === 'at-risk' || p.status === 'delayed').length}
+                {projects.filter((p) => p.status === 'at-risk' || p.status === 'delayed').length}
               </div>
               <p className="text-sm text-muted-foreground">Проблемных объектов</p>
             </CardContent>
@@ -216,16 +355,18 @@ const Index = () => {
 
           <TabsContent value="projects" className="space-y-4">
             <div className="grid gap-4">
-              {mockProjects.map((project, index) => (
+              {projects.map((project, index) => (
                 <Card
                   key={project.id}
-                  className="animate-scale-in hover:shadow-lg transition-all cursor-pointer border-border hover:border-primary/40"
+                  className="animate-scale-in hover:shadow-lg transition-all border-border hover:border-primary/40"
                   style={{ animationDelay: `${index * 100}ms` }}
-                  onClick={() => setSelectedProject(selectedProject?.id === project.id ? null : project)}
                 >
                   <CardHeader>
                     <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-4">
+                      <div 
+                        className="flex items-start gap-4 flex-1 cursor-pointer"
+                        onClick={() => setSelectedProject(selectedProject?.id === project.id ? null : project)}
+                      >
                         <div className="p-3 bg-primary/10 rounded-xl mt-1">
                           <Icon name={getProjectIcon(project.type)} className="text-primary" size={24} />
                         </div>
@@ -243,11 +384,25 @@ const Index = () => {
                           </div>
                         </div>
                       </div>
-                      <Icon
-                        name={selectedProject?.id === project.id ? 'ChevronUp' : 'ChevronDown'}
-                        className="text-muted-foreground"
-                        size={20}
-                      />
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteProject(project.id);
+                          }}
+                        >
+                          <Icon name="Trash2" size={18} />
+                        </Button>
+                        <Icon
+                          name={selectedProject?.id === project.id ? 'ChevronUp' : 'ChevronDown'}
+                          className="text-muted-foreground cursor-pointer"
+                          size={20}
+                          onClick={() => setSelectedProject(selectedProject?.id === project.id ? null : project)}
+                        />
+                      </div>
                     </div>
                   </CardHeader>
 
@@ -373,7 +528,7 @@ const Index = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-8">
-                  {mockProjects.map((project) => {
+                  {projects.map((project) => {
                     const projectStart = new Date(project.startDate).getTime();
                     const projectEnd = new Date(project.endDate).getTime();
                     const today = new Date().getTime();
@@ -542,8 +697,8 @@ const Index = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {['road', 'bridge', 'utility'].map((type) => {
-                    const count = mockProjects.filter((p) => p.type === type).length;
-                    const percentage = (count / mockProjects.length) * 100;
+                    const count = projects.filter((p) => p.type === type).length;
+                    const percentage = projects.length > 0 ? (count / projects.length) * 100 : 0;
                     return (
                       <div key={type} className="space-y-2">
                         <div className="flex justify-between text-sm">
@@ -571,8 +726,8 @@ const Index = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {['on-track', 'at-risk', 'delayed'].map((status) => {
-                    const count = mockProjects.filter((p) => p.status === status).length;
-                    const percentage = (count / mockProjects.length) * 100;
+                    const count = projects.filter((p) => p.status === status).length;
+                    const percentage = projects.length > 0 ? (count / projects.length) * 100 : 0;
                     return (
                       <div key={status} className="space-y-2">
                         <div className="flex justify-between text-sm">
@@ -610,20 +765,20 @@ const Index = () => {
                     <div className="space-y-2">
                       <p className="text-sm text-muted-foreground">Общий бюджет</p>
                       <p className="text-3xl font-bold">
-                        {formatCurrency(mockProjects.reduce((acc, p) => acc + p.budget, 0))}
+                        {formatCurrency(projects.reduce((acc, p) => acc + p.budget, 0))}
                       </p>
                     </div>
                     <div className="space-y-2">
                       <p className="text-sm text-muted-foreground">Израсходовано</p>
                       <p className="text-3xl font-bold text-primary">
-                        {formatCurrency(mockProjects.reduce((acc, p) => acc + p.spent, 0))}
+                        {formatCurrency(projects.reduce((acc, p) => acc + p.spent, 0))}
                       </p>
                     </div>
                     <div className="space-y-2">
                       <p className="text-sm text-muted-foreground">Остаток</p>
                       <p className="text-3xl font-bold text-secondary">
                         {formatCurrency(
-                          mockProjects.reduce((acc, p) => acc + (p.budget - p.spent), 0)
+                          projects.reduce((acc, p) => acc + (p.budget - p.spent), 0)
                         )}
                       </p>
                     </div>
@@ -631,9 +786,11 @@ const Index = () => {
                   <div className="mt-6">
                     <Progress
                       value={
-                        (mockProjects.reduce((acc, p) => acc + p.spent, 0) /
-                          mockProjects.reduce((acc, p) => acc + p.budget, 0)) *
-                        100
+                        projects.reduce((acc, p) => acc + p.budget, 0) > 0
+                          ? (projects.reduce((acc, p) => acc + p.spent, 0) /
+                              projects.reduce((acc, p) => acc + p.budget, 0)) *
+                            100
+                          : 0
                       }
                       className="h-3"
                     />
