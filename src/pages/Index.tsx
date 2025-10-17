@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import * as XLSX from 'xlsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -241,6 +242,7 @@ const Index = () => {
     violationRecording: false,
     notes: '',
   });
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const getProjectIcon = (type: string) => {
     switch (type) {
@@ -480,6 +482,62 @@ const Index = () => {
       webUpload: false,
       violationRecording: false,
       notes: '',
+    });
+  };
+
+  const exportToExcel = (projectId: string) => {
+    const project = projects.find((p) => p.id === projectId);
+    if (!project || !project.objects.length) return;
+
+    const data = project.objects.map((obj) => ({
+      'Объект': obj.name,
+      'Регион': obj.region,
+      'Район': obj.district,
+      'Локация': obj.location,
+      'Координаты': obj.coordinates,
+      'Обследование': obj.inspection ? 'Выполнено' : 'Не выполнено',
+      'ТУ на установку опор': obj.poleInstallationPermit ? 'Получено' : 'Не получено',
+      'ТУ на подключение к электропитанию': obj.powerConnectionPermit ? 'Получено' : 'Не получено',
+      'Другие разрешения': obj.otherPermits || '-',
+      'Номер оборудования': obj.equipmentNumber,
+      'Количество': obj.quantity,
+      'Свидетельство о поверке': obj.verificationCertificate ? 'Есть' : 'Нет',
+      'Исполнительная документация': obj.executiveDocumentation ? 'Готово' : 'Не готово',
+      'Строительно-монтажные работы': obj.constructionWork ? 'Завершено' : 'Не завершено',
+      'Пуско-наладочные работы': obj.commissioningWork ? 'Завершено' : 'Не завершено',
+      'ПОДД': obj.trafficArrangement ? 'Да' : 'Нет',
+      'Выгрузка в Паутину': obj.webUpload ? 'Выполнено' : 'Не выполнено',
+      'Фиксация нарушений': obj.violationRecording ? 'Да' : 'Нет',
+      'Примечание': obj.notes || '-',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Объекты');
+
+    const fileName = `${project.name}_объекты_${new Date().toLocaleDateString('ru-RU')}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
+  const filterObjects = (objects: ProjectObject[]) => {
+    if (statusFilter === 'all') return objects;
+    
+    return objects.filter((obj) => {
+      switch (statusFilter) {
+        case 'completed':
+          return obj.constructionWork && obj.commissioningWork && obj.executiveDocumentation;
+        case 'in-progress':
+          return (obj.constructionWork || obj.commissioningWork) && 
+                 !(obj.constructionWork && obj.commissioningWork && obj.executiveDocumentation);
+        case 'not-started':
+          return !obj.constructionWork && !obj.commissioningWork;
+        case 'with-permits':
+          return obj.inspection && obj.poleInstallationPermit && obj.powerConnectionPermit;
+        case 'no-permits':
+          return !obj.inspection || !obj.poleInstallationPermit || !obj.powerConnectionPermit;
+        default:
+          return true;
+      }
     });
   };
 
@@ -805,23 +863,50 @@ const Index = () => {
                         </div>
 
                         <div className="pt-6 border-t border-border space-y-4">
-                          <div className="flex items-center justify-between">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <h4 className="font-semibold flex items-center gap-2">
                               <Icon name="MapPin" size={18} />
                               Объекты проекта
                             </h4>
-                            <Button
-                              size="sm"
-                              onClick={() => openAddObjectDialog(project.id)}
-                              className="gap-2"
-                            >
-                              <Icon name="Plus" size={14} />
-                              Добавить объект
-                            </Button>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                <SelectTrigger className="w-[200px]">
+                                  <SelectValue placeholder="Фильтр по статусу" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="all">Все объекты</SelectItem>
+                                  <SelectItem value="completed">Завершенные</SelectItem>
+                                  <SelectItem value="in-progress">В работе</SelectItem>
+                                  <SelectItem value="not-started">Не начаты</SelectItem>
+                                  <SelectItem value="with-permits">С разрешениями</SelectItem>
+                                  <SelectItem value="no-permits">Без разрешений</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => exportToExcel(project.id)}
+                                className="gap-2"
+                                disabled={!project.objects || project.objects.length === 0}
+                              >
+                                <Icon name="Download" size={14} />
+                                Экспорт Excel
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => openAddObjectDialog(project.id)}
+                                className="gap-2"
+                              >
+                                <Icon name="Plus" size={14} />
+                                Добавить объект
+                              </Button>
+                            </div>
                           </div>
 
                           {project.objects && project.objects.length > 0 && (
-                            <div className="overflow-x-auto rounded-lg border border-border">
+                            <>
+                              {filterObjects(project.objects).length > 0 ? (
+                                <div className="overflow-x-auto rounded-lg border border-border">
                               <Table>
                                 <TableHeader>
                                   <TableRow>
@@ -848,7 +933,7 @@ const Index = () => {
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                  {project.objects.map((obj) => (
+                                  {filterObjects(project.objects).map((obj) => (
                                     <TableRow key={obj.id}>
                                       <TableCell className="font-medium">{obj.name}</TableCell>
                                       <TableCell>{obj.region}</TableCell>
@@ -934,6 +1019,13 @@ const Index = () => {
                                 </TableBody>
                               </Table>
                             </div>
+                              ) : (
+                                <div className="text-center py-8 text-muted-foreground">
+                                  <Icon name="Filter" className="mx-auto mb-2" size={32} />
+                                  <p>Нет объектов, соответствующих выбранному фильтру</p>
+                                </div>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
