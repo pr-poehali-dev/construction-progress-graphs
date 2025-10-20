@@ -1200,17 +1200,68 @@ const Index = () => {
                                       <TableCell>{obj.location}</TableCell>
                                       <TableCell className="font-mono text-xs">{obj.coordinates}</TableCell>
                                       <TableCell>
-                                        <Badge variant={obj.inspection ? 'default' : 'secondary'} className="text-xs">
+                                        <Badge 
+                                          variant={obj.inspection ? 'default' : 'secondary'} 
+                                          className="text-xs cursor-pointer hover:opacity-80 transition-opacity"
+                                          onClick={() => {
+                                            setProjects(projects.map(p => 
+                                              p.id === project.id 
+                                                ? {
+                                                    ...p,
+                                                    objects: p.objects.map(o => 
+                                                      o.id === obj.id 
+                                                        ? { ...o, inspection: !o.inspection }
+                                                        : o
+                                                    )
+                                                  }
+                                                : p
+                                            ));
+                                          }}
+                                        >
                                           {obj.inspection ? 'Выполнено' : 'Не выполнено'}
                                         </Badge>
                                       </TableCell>
                                       <TableCell>
-                                        <Badge variant={obj.poleInstallationPermit ? 'default' : 'secondary'} className="text-xs">
+                                        <Badge 
+                                          variant={obj.poleInstallationPermit ? 'default' : 'secondary'} 
+                                          className="text-xs cursor-pointer hover:opacity-80 transition-opacity"
+                                          onClick={() => {
+                                            setProjects(projects.map(p => 
+                                              p.id === project.id 
+                                                ? {
+                                                    ...p,
+                                                    objects: p.objects.map(o => 
+                                                      o.id === obj.id 
+                                                        ? { ...o, poleInstallationPermit: !o.poleInstallationPermit }
+                                                        : o
+                                                    )
+                                                  }
+                                                : p
+                                            ));
+                                          }}
+                                        >
                                           {obj.poleInstallationPermit ? 'Получено' : 'Не получено'}
                                         </Badge>
                                       </TableCell>
                                       <TableCell>
-                                        <Badge variant={obj.powerConnectionPermit ? 'default' : 'secondary'} className="text-xs">
+                                        <Badge 
+                                          variant={obj.powerConnectionPermit ? 'default' : 'secondary'} 
+                                          className="text-xs cursor-pointer hover:opacity-80 transition-opacity"
+                                          onClick={() => {
+                                            setProjects(projects.map(p => 
+                                              p.id === project.id 
+                                                ? {
+                                                    ...p,
+                                                    objects: p.objects.map(o => 
+                                                      o.id === obj.id 
+                                                        ? { ...o, powerConnectionPermit: !o.powerConnectionPermit }
+                                                        : o
+                                                    )
+                                                  }
+                                                : p
+                                            ));
+                                          }}
+                                        >
                                           {obj.powerConnectionPermit ? 'Получено' : 'Не получено'}
                                         </Badge>
                                       </TableCell>
@@ -1218,37 +1269,156 @@ const Index = () => {
                                       <TableCell className="font-mono text-xs">{obj.equipmentNumber}</TableCell>
                                       <TableCell>{obj.quantity}</TableCell>
                                       <TableCell>
-                                        <Badge variant={obj.verificationCertificate ? 'default' : 'secondary'} className="text-xs">
+                                        <Badge 
+                                          variant={obj.verificationCertificate ? 'default' : 'secondary'} 
+                                          className="text-xs cursor-pointer hover:opacity-80 transition-opacity"
+                                          onClick={() => {
+                                            setProjects(projects.map(p => 
+                                              p.id === project.id 
+                                                ? {
+                                                    ...p,
+                                                    objects: p.objects.map(o => 
+                                                      o.id === obj.id 
+                                                        ? { ...o, verificationCertificate: !o.verificationCertificate }
+                                                        : o
+                                                    )
+                                                  }
+                                                : p
+                                            ));
+                                          }}
+                                        >
                                           {obj.verificationCertificate ? 'Есть' : 'Нет'}
                                         </Badge>
                                       </TableCell>
                                       <TableCell>
-                                        <Badge variant={obj.executiveDocumentation ? 'default' : 'secondary'} className="text-xs">
+                                        <Badge 
+                                          variant={obj.executiveDocumentation ? 'default' : 'secondary'} 
+                                          className="text-xs cursor-pointer hover:opacity-80 transition-opacity"
+                                          onClick={() => {
+                                            setProjects(projects.map(p => 
+                                              p.id === project.id 
+                                                ? {
+                                                    ...p,
+                                                    objects: p.objects.map(o => 
+                                                      o.id === obj.id 
+                                                        ? { ...o, executiveDocumentation: !o.executiveDocumentation }
+                                                        : o
+                                                    )
+                                                  }
+                                                : p
+                                            ));
+                                          }}
+                                        >
                                           {obj.executiveDocumentation ? 'Готово' : 'Не готово'}
                                         </Badge>
                                       </TableCell>
                                       <TableCell>
-                                        <Badge variant={obj.constructionWork ? 'default' : 'secondary'} className="text-xs">
+                                        <Badge 
+                                          variant={obj.constructionWork ? 'default' : 'secondary'} 
+                                          className="text-xs cursor-pointer hover:opacity-80 transition-opacity"
+                                          onClick={() => {
+                                            setProjects(projects.map(p => 
+                                              p.id === project.id 
+                                                ? {
+                                                    ...p,
+                                                    objects: p.objects.map(o => 
+                                                      o.id === obj.id 
+                                                        ? { ...o, constructionWork: !o.constructionWork }
+                                                        : o
+                                                    )
+                                                  }
+                                                : p
+                                            ));
+                                          }}
+                                        >
                                           {obj.constructionWork ? 'Завершено' : 'Не завершено'}
                                         </Badge>
                                       </TableCell>
                                       <TableCell>
-                                        <Badge variant={obj.commissioningWork ? 'default' : 'secondary'} className="text-xs">
+                                        <Badge 
+                                          variant={obj.commissioningWork ? 'default' : 'secondary'} 
+                                          className="text-xs cursor-pointer hover:opacity-80 transition-opacity"
+                                          onClick={() => {
+                                            setProjects(projects.map(p => 
+                                              p.id === project.id 
+                                                ? {
+                                                    ...p,
+                                                    objects: p.objects.map(o => 
+                                                      o.id === obj.id 
+                                                        ? { ...o, commissioningWork: !o.commissioningWork }
+                                                        : o
+                                                    )
+                                                  }
+                                                : p
+                                            ));
+                                          }}
+                                        >
                                           {obj.commissioningWork ? 'Завершено' : 'Не завершено'}
                                         </Badge>
                                       </TableCell>
                                       <TableCell>
-                                        <Badge variant={obj.trafficArrangement ? 'default' : 'secondary'} className="text-xs">
+                                        <Badge 
+                                          variant={obj.trafficArrangement ? 'default' : 'secondary'} 
+                                          className="text-xs cursor-pointer hover:opacity-80 transition-opacity"
+                                          onClick={() => {
+                                            setProjects(projects.map(p => 
+                                              p.id === project.id 
+                                                ? {
+                                                    ...p,
+                                                    objects: p.objects.map(o => 
+                                                      o.id === obj.id 
+                                                        ? { ...o, trafficArrangement: !o.trafficArrangement }
+                                                        : o
+                                                    )
+                                                  }
+                                                : p
+                                            ));
+                                          }}
+                                        >
                                           {obj.trafficArrangement ? 'Да' : 'Нет'}
                                         </Badge>
                                       </TableCell>
                                       <TableCell>
-                                        <Badge variant={obj.webUpload ? 'default' : 'secondary'} className="text-xs">
+                                        <Badge 
+                                          variant={obj.webUpload ? 'default' : 'secondary'} 
+                                          className="text-xs cursor-pointer hover:opacity-80 transition-opacity"
+                                          onClick={() => {
+                                            setProjects(projects.map(p => 
+                                              p.id === project.id 
+                                                ? {
+                                                    ...p,
+                                                    objects: p.objects.map(o => 
+                                                      o.id === obj.id 
+                                                        ? { ...o, webUpload: !o.webUpload }
+                                                        : o
+                                                    )
+                                                  }
+                                                : p
+                                            ));
+                                          }}
+                                        >
                                           {obj.webUpload ? 'Выполнено' : 'Не выполнено'}
                                         </Badge>
                                       </TableCell>
                                       <TableCell>
-                                        <Badge variant={obj.violationRecording ? 'default' : 'secondary'} className="text-xs">
+                                        <Badge 
+                                          variant={obj.violationRecording ? 'default' : 'secondary'} 
+                                          className="text-xs cursor-pointer hover:opacity-80 transition-opacity"
+                                          onClick={() => {
+                                            setProjects(projects.map(p => 
+                                              p.id === project.id 
+                                                ? {
+                                                    ...p,
+                                                    objects: p.objects.map(o => 
+                                                      o.id === obj.id 
+                                                        ? { ...o, violationRecording: !o.violationRecording }
+                                                        : o
+                                                    )
+                                                  }
+                                                : p
+                                            ));
+                                          }}
+                                        >
                                           {obj.violationRecording ? 'Да' : 'Нет'}
                                         </Badge>
                                       </TableCell>
