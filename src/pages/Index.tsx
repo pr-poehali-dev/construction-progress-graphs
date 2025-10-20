@@ -299,6 +299,7 @@ const Index = () => {
     status: 'pending',
   });
   const [selectedStageFilter, setSelectedStageFilter] = useState<string>('all');
+  const [deliveryStageFilter, setDeliveryStageFilter] = useState<string>('all');
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -658,6 +659,14 @@ const Index = () => {
       }
     }
     
+    if (deliveryStageFilter !== 'all') {
+      if (deliveryStageFilter === 'no-delivery-stage') {
+        filtered = filtered.filter(obj => !obj.deliveryStage);
+      } else {
+        filtered = filtered.filter(obj => obj.deliveryStage === deliveryStageFilter);
+      }
+    }
+    
     if (statusFilter === 'all') return filtered;
     
     return filtered.filter((obj) => {
@@ -677,6 +686,13 @@ const Index = () => {
           return true;
       }
     });
+  };
+
+  const getDeliveryStageCount = (objects: ProjectObject[], stage: '1' | '2' | '3' | '4' | '5' | 'none') => {
+    if (stage === 'none') {
+      return objects.filter(obj => !obj.deliveryStage).length;
+    }
+    return objects.filter(obj => obj.deliveryStage === stage).length;
   };
 
   const handleToggleObject = (objectId: string) => {
@@ -1200,6 +1216,57 @@ const Index = () => {
                         </div>
 
                         <div className="pt-6 border-t border-border space-y-4">
+                          <h4 className="font-semibold flex items-center gap-2 mb-3">
+                            <Icon name="Layers" size={18} />
+                            Этапы сдачи объектов
+                          </h4>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                            <div 
+                              className="p-3 rounded-lg bg-muted/30 border border-border hover:border-primary/40 transition-all cursor-pointer"
+                              onClick={() => setDeliveryStageFilter('1')}
+                            >
+                              <p className="text-xs text-muted-foreground mb-1">1 этап</p>
+                              <p className="text-2xl font-bold">{getDeliveryStageCount(project.objects, '1')}</p>
+                            </div>
+                            <div 
+                              className="p-3 rounded-lg bg-muted/30 border border-border hover:border-primary/40 transition-all cursor-pointer"
+                              onClick={() => setDeliveryStageFilter('2')}
+                            >
+                              <p className="text-xs text-muted-foreground mb-1">2 этап</p>
+                              <p className="text-2xl font-bold">{getDeliveryStageCount(project.objects, '2')}</p>
+                            </div>
+                            <div 
+                              className="p-3 rounded-lg bg-muted/30 border border-border hover:border-primary/40 transition-all cursor-pointer"
+                              onClick={() => setDeliveryStageFilter('3')}
+                            >
+                              <p className="text-xs text-muted-foreground mb-1">3 этап</p>
+                              <p className="text-2xl font-bold">{getDeliveryStageCount(project.objects, '3')}</p>
+                            </div>
+                            <div 
+                              className="p-3 rounded-lg bg-muted/30 border border-border hover:border-primary/40 transition-all cursor-pointer"
+                              onClick={() => setDeliveryStageFilter('4')}
+                            >
+                              <p className="text-xs text-muted-foreground mb-1">4 этап</p>
+                              <p className="text-2xl font-bold">{getDeliveryStageCount(project.objects, '4')}</p>
+                            </div>
+                            <div 
+                              className="p-3 rounded-lg bg-muted/30 border border-border hover:border-primary/40 transition-all cursor-pointer"
+                              onClick={() => setDeliveryStageFilter('5')}
+                            >
+                              <p className="text-xs text-muted-foreground mb-1">5 этап</p>
+                              <p className="text-2xl font-bold">{getDeliveryStageCount(project.objects, '5')}</p>
+                            </div>
+                            <div 
+                              className="p-3 rounded-lg bg-muted/30 border border-border hover:border-primary/40 transition-all cursor-pointer"
+                              onClick={() => setDeliveryStageFilter('no-delivery-stage')}
+                            >
+                              <p className="text-xs text-muted-foreground mb-1">Без этапа</p>
+                              <p className="text-2xl font-bold">{getDeliveryStageCount(project.objects, 'none')}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="pt-6 border-t border-border space-y-4">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <h4 className="font-semibold flex items-center gap-2">
                               <Icon name="MapPin" size={18} />
@@ -1218,6 +1285,20 @@ const Index = () => {
                                       {stage.name}
                                     </SelectItem>
                                   ))}
+                                </SelectContent>
+                              </Select>
+                              <Select value={deliveryStageFilter} onValueChange={setDeliveryStageFilter}>
+                                <SelectTrigger className="w-[200px]">
+                                  <SelectValue placeholder="Этап сдачи" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="all">Все этапы сдачи</SelectItem>
+                                  <SelectItem value="no-delivery-stage">Без этапа сдачи</SelectItem>
+                                  <SelectItem value="1">1 этап ({getDeliveryStageCount(project.objects, '1')})</SelectItem>
+                                  <SelectItem value="2">2 этап ({getDeliveryStageCount(project.objects, '2')})</SelectItem>
+                                  <SelectItem value="3">3 этап ({getDeliveryStageCount(project.objects, '3')})</SelectItem>
+                                  <SelectItem value="4">4 этап ({getDeliveryStageCount(project.objects, '4')})</SelectItem>
+                                  <SelectItem value="5">5 этап ({getDeliveryStageCount(project.objects, '5')})</SelectItem>
                                 </SelectContent>
                               </Select>
                               <Select value={statusFilter} onValueChange={setStatusFilter}>
