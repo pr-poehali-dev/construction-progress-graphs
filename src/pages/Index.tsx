@@ -34,6 +34,9 @@ interface ProjectObject {
   trafficArrangement: boolean;
   webUpload: boolean;
   violationRecording: boolean;
+  violationTypes: string[];
+  documentationUrl: string;
+  workStatus: 'not-started' | 'in-progress' | 'paused' | 'completed';
   notes: string;
 }
 
@@ -97,6 +100,9 @@ const mockProjects: Project[] = [
         trafficArrangement: true,
         webUpload: false,
         violationRecording: false,
+        violationTypes: ['12.9 ч.3', '12.12 ч.2'],
+        documentationUrl: 'https://docs.example.com/m12-km10-15',
+        workStatus: 'in-progress',
         notes: 'Ожидается подключение к сети',
       },
       {
@@ -119,6 +125,9 @@ const mockProjects: Project[] = [
         trafficArrangement: false,
         webUpload: false,
         violationRecording: false,
+        violationTypes: [],
+        documentationUrl: '',
+        workStatus: 'not-started',
         notes: 'Требуется согласование ТУ',
       },
     ],
@@ -160,6 +169,9 @@ const mockProjects: Project[] = [
         trafficArrangement: true,
         webUpload: true,
         violationRecording: false,
+        violationTypes: [],
+        documentationUrl: 'https://docs.example.com/bridge-volga',
+        workStatus: 'completed',
         notes: 'Готово к эксплуатации',
       },
     ],
@@ -201,10 +213,33 @@ const mockProjects: Project[] = [
         trafficArrangement: false,
         webUpload: true,
         violationRecording: false,
+        violationTypes: ['12.15 ч.2'],
+        documentationUrl: 'https://docs.example.com/pump-ld-001',
+        workStatus: 'in-progress',
         notes: 'На стадии испытаний',
       },
     ],
   },
+];
+
+const KOAP_VIOLATIONS = [
+  { code: '12.9 ч.1', description: 'Превышение скорости на 20-40 км/ч' },
+  { code: '12.9 ч.2', description: 'Превышение скорости на 40-60 км/ч' },
+  { code: '12.9 ч.3', description: 'Превышение скорости на 60-80 км/ч' },
+  { code: '12.9 ч.4', description: 'Превышение скорости более 80 км/ч' },
+  { code: '12.12 ч.1', description: 'Проезд на запрещающий сигнал светофора' },
+  { code: '12.12 ч.2', description: 'Повторный проезд на красный свет' },
+  { code: '12.13 ч.1', description: 'Выезд на перекресток при заторе' },
+  { code: '12.15 ч.1', description: 'Нарушение правил расположения ТС на проезжей части' },
+  { code: '12.15 ч.2', description: 'Движение по обочине' },
+  { code: '12.15 ч.4', description: 'Выезд на встречную полосу' },
+  { code: '12.15 ч.5', description: 'Повторный выезд на встречную полосу' },
+  { code: '12.16 ч.1', description: 'Несоблюдение требований дорожной разметки' },
+  { code: '12.16 ч.2', description: 'Поворот или разворот в нарушение требований' },
+  { code: '12.17 ч.1', description: 'Непредоставление преимущества пешеходам' },
+  { code: '12.18', description: 'Непредоставление преимущества ТС с включенным спецсигналом' },
+  { code: '12.19 ч.3', description: 'Остановка или стоянка на пешеходном переходе' },
+  { code: '12.19 ч.5', description: 'Стоянка на тротуаре' },
 ];
 
 const Index = () => {
@@ -240,6 +275,9 @@ const Index = () => {
     trafficArrangement: false,
     webUpload: false,
     violationRecording: false,
+    violationTypes: [],
+    documentationUrl: '',
+    workStatus: 'not-started',
     notes: '',
   });
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -362,6 +400,9 @@ const Index = () => {
       trafficArrangement: newObject.trafficArrangement || false,
       webUpload: newObject.webUpload || false,
       violationRecording: newObject.violationRecording || false,
+      violationTypes: newObject.violationTypes || [],
+      documentationUrl: newObject.documentationUrl || '',
+      workStatus: newObject.workStatus || 'not-started',
       notes: newObject.notes || '',
     };
 
@@ -399,6 +440,9 @@ const Index = () => {
       trafficArrangement: newObject.trafficArrangement !== undefined ? newObject.trafficArrangement : editingObject.trafficArrangement,
       webUpload: newObject.webUpload !== undefined ? newObject.webUpload : editingObject.webUpload,
       violationRecording: newObject.violationRecording !== undefined ? newObject.violationRecording : editingObject.violationRecording,
+      violationTypes: newObject.violationTypes || editingObject.violationTypes,
+      documentationUrl: newObject.documentationUrl || editingObject.documentationUrl,
+      workStatus: newObject.workStatus || editingObject.workStatus,
       notes: newObject.notes || editingObject.notes,
     };
 
@@ -446,6 +490,9 @@ const Index = () => {
       trafficArrangement: false,
       webUpload: false,
       violationRecording: false,
+      violationTypes: [],
+      documentationUrl: '',
+      workStatus: 'not-started',
       notes: '',
     });
     setIsObjectDialogOpen(true);
@@ -481,8 +528,41 @@ const Index = () => {
       trafficArrangement: false,
       webUpload: false,
       violationRecording: false,
+      violationTypes: [],
+      documentationUrl: '',
+      workStatus: 'not-started',
       notes: '',
     });
+  };
+
+  const getWorkStatusText = (status: string) => {
+    switch (status) {
+      case 'not-started':
+        return 'Не взято в работу';
+      case 'in-progress':
+        return 'В работе';
+      case 'paused':
+        return 'Приостановлено';
+      case 'completed':
+        return 'Выполнено';
+      default:
+        return 'Неизвестно';
+    }
+  };
+
+  const getWorkStatusColor = (status: string) => {
+    switch (status) {
+      case 'not-started':
+        return 'secondary';
+      case 'in-progress':
+        return 'default';
+      case 'paused':
+        return 'outline';
+      case 'completed':
+        return 'default';
+      default:
+        return 'secondary';
+    }
   };
 
   const exportToExcel = (projectId: string) => {
@@ -508,6 +588,9 @@ const Index = () => {
       'ПОДД': obj.trafficArrangement ? 'Да' : 'Нет',
       'Выгрузка в Паутину': obj.webUpload ? 'Выполнено' : 'Не выполнено',
       'Фиксация нарушений': obj.violationRecording ? 'Да' : 'Нет',
+      'Типы нарушений КоАП': obj.violationTypes?.join(', ') || '-',
+      'Ссылка на документацию': obj.documentationUrl || '-',
+      'Статус работ': getWorkStatusText(obj.workStatus || 'not-started'),
       'Примечание': obj.notes || '-',
     }));
 
@@ -928,6 +1011,9 @@ const Index = () => {
                                     <TableHead className="min-w-[90px]">ПОДД</TableHead>
                                     <TableHead className="min-w-[140px]">Выгрузка в Паутину</TableHead>
                                     <TableHead className="min-w-[140px]">Фиксация нарушений</TableHead>
+                                    <TableHead className="min-w-[180px]">Типы нарушений КоАП</TableHead>
+                                    <TableHead className="min-w-[250px]">Ссылка на документацию</TableHead>
+                                    <TableHead className="min-w-[150px]">Статус работ</TableHead>
                                     <TableHead className="min-w-[200px]">Примечание</TableHead>
                                     <TableHead className="w-[100px]">Действия</TableHead>
                                   </TableRow>
@@ -991,6 +1077,39 @@ const Index = () => {
                                       <TableCell>
                                         <Badge variant={obj.violationRecording ? 'default' : 'secondary'} className="text-xs">
                                           {obj.violationRecording ? 'Да' : 'Нет'}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell className="text-xs">
+                                        {obj.violationTypes && obj.violationTypes.length > 0 ? (
+                                          <div className="flex flex-wrap gap-1">
+                                            {obj.violationTypes.map((v, i) => (
+                                              <Badge key={i} variant="outline" className="text-xs">
+                                                {v}
+                                              </Badge>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          '-'
+                                        )}
+                                      </TableCell>
+                                      <TableCell className="text-xs max-w-[250px]">
+                                        {obj.documentationUrl ? (
+                                          <a
+                                            href={obj.documentationUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-primary hover:underline flex items-center gap-1"
+                                          >
+                                            <Icon name="ExternalLink" size={12} />
+                                            {obj.documentationUrl}
+                                          </a>
+                                        ) : (
+                                          '-'
+                                        )}
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge variant={getWorkStatusColor(obj.workStatus || 'not-started')} className="text-xs">
+                                          {getWorkStatusText(obj.workStatus || 'not-started')}
                                         </Badge>
                                       </TableCell>
                                       <TableCell className="text-xs max-w-[200px]">{obj.notes || '-'}</TableCell>
@@ -1498,6 +1617,88 @@ const Index = () => {
                   />
                   <Label htmlFor="violations" className="cursor-pointer">Фиксация нарушений</Label>
                 </div>
+              </div>
+            </div>
+
+            <div className="grid gap-4 p-4 border border-border rounded-lg bg-muted/30">
+              <h4 className="font-semibold text-sm flex items-center gap-2">
+                <Icon name="FileText" size={16} />
+                Дополнительная информация
+              </h4>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="work-status">Статус работ</Label>
+                <Select
+                  value={newObject.workStatus || 'not-started'}
+                  onValueChange={(value) => setNewObject({ ...newObject, workStatus: value as any })}
+                >
+                  <SelectTrigger id="work-status">
+                    <SelectValue placeholder="Выберите статус" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="not-started">Не взято в работу</SelectItem>
+                    <SelectItem value="in-progress">В работе</SelectItem>
+                    <SelectItem value="paused">Приостановлено</SelectItem>
+                    <SelectItem value="completed">Выполнено</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="violation-types">Типы нарушений КоАП ПДД</Label>
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {newObject.violationTypes && newObject.violationTypes.length > 0 && (
+                      newObject.violationTypes.map((v, i) => (
+                        <Badge key={i} variant="secondary" className="gap-1">
+                          {v}
+                          <button
+                            onClick={() => setNewObject({
+                              ...newObject,
+                              violationTypes: newObject.violationTypes?.filter((_, idx) => idx !== i)
+                            })}
+                            className="ml-1 hover:text-destructive"
+                          >
+                            <Icon name="X" size={12} />
+                          </button>
+                        </Badge>
+                      ))
+                    )}
+                  </div>
+                  <Select
+                    value=""
+                    onValueChange={(value) => {
+                      if (value && !newObject.violationTypes?.includes(value)) {
+                        setNewObject({
+                          ...newObject,
+                          violationTypes: [...(newObject.violationTypes || []), value]
+                        });
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Добавить нарушение" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {KOAP_VIOLATIONS.map((violation) => (
+                        <SelectItem key={violation.code} value={violation.code}>
+                          {violation.code} — {violation.description}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="documentation-url">Ссылка на документацию</Label>
+                <Input
+                  id="documentation-url"
+                  type="url"
+                  placeholder="https://docs.example.com/project-123"
+                  value={newObject.documentationUrl}
+                  onChange={(e) => setNewObject({ ...newObject, documentationUrl: e.target.value })}
+                />
               </div>
             </div>
 
