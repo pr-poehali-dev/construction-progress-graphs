@@ -284,6 +284,8 @@ const Index = () => {
   const [selectedObjects, setSelectedObjects] = useState<Set<string>>(new Set());
   const [isBulkStatusDialogOpen, setIsBulkStatusDialogOpen] = useState(false);
   const [bulkStatus, setBulkStatus] = useState<'not-started' | 'in-progress' | 'paused' | 'completed'>('in-progress');
+  const [isBulkViolationsDialogOpen, setIsBulkViolationsDialogOpen] = useState(false);
+  const [bulkViolations, setBulkViolations] = useState<string[]>([]);
 
   const getProjectIcon = (type: string) => {
     switch (type) {
@@ -568,11 +570,17 @@ const Index = () => {
     }
   };
 
-  const exportToExcel = (projectId: string) => {
+  const exportToExcel = (projectId: string, selectedOnly: boolean = false) => {
     const project = projects.find((p) => p.id === projectId);
     if (!project || !project.objects.length) return;
 
-    const data = project.objects.map((obj) => ({
+    const objectsToExport = selectedOnly 
+      ? project.objects.filter(obj => selectedObjects.has(obj.id))
+      : project.objects;
+
+    if (objectsToExport.length === 0) return;
+
+    const data = objectsToExport.map((obj) => ({
       'Объект': obj.name,
       'Регион': obj.region,
       'Район': obj.district,
@@ -601,7 +609,8 @@ const Index = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Объекты');
 
-    const fileName = `${project.name}_объекты_${new Date().toLocaleDateString('ru-RU')}.xlsx`;
+    const suffix = selectedOnly ? `_выбранные_${objectsToExport.length}` : '_объекты';
+    const fileName = `${project.name}${suffix}_${new Date().toLocaleDateString('ru-RU')}.xlsx`;
     XLSX.writeFile(wb, fileName);
   };
 
@@ -673,6 +682,23 @@ const Index = () => {
 
   const clearSelection = () => {
     setSelectedObjects(new Set());
+  };
+
+  const handleBulkViolationsChange = () => {
+    if (selectedObjects.size === 0) return;
+
+    setProjects(projects.map(project => ({
+      ...project,
+      objects: project.objects.map(obj =>
+        selectedObjects.has(obj.id)
+          ? { ...obj, violationTypes: bulkViolations }
+          : obj
+      )
+    })));
+
+    setSelectedObjects(new Set());
+    setBulkViolations([]);
+    setIsBulkViolationsDialogOpen(false);
   };
 
   return (
@@ -1038,30 +1064,55 @@ const Index = () => {
                           </div>
 
                           {selectedObjects.size > 0 && (
-                            <div className="flex items-center gap-3 p-3 bg-primary/10 rounded-lg border border-primary/20">
-                              <Icon name="CheckSquare" size={18} className="text-primary" />
-                              <span className="text-sm font-medium">
-                                Выбрано объектов: {selectedObjects.size}
-                              </span>
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 bg-primary/10 rounded-lg border border-primary/20">
+                              <div className="flex items-center gap-2">
+                                <Icon name="CheckSquare" size={18} className="text-primary" />
+                                <span className="text-sm font-medium">
+                                  Выбрано объектов: {selectedObjects.size}
+                                </span>
+                              </div>
                               <div className="flex-1" />
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setIsBulkStatusDialogOpen(true)}
-                                className="gap-2"
-                              >
-                                <Icon name="Edit" size={14} />
-                                Изменить статус
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={clearSelection}
-                                className="gap-2"
-                              >
-                                <Icon name="X" size={14} />
-                                Отменить
-                              </Button>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setIsBulkStatusDialogOpen(true)}
+                                  className="gap-2"
+                                >
+                                  <Icon name="Edit" size={14} />
+                                  Изменить статус
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setBulkViolations([]);
+                                    setIsBulkViolationsDialogOpen(true);
+                                  }}
+                                  className="gap-2"
+                                >
+                                  <Icon name="AlertTriangle" size={14} />
+                                  Назначить нарушения
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => exportToExcel(project.id, true)}
+                                  className="gap-2"
+                                >
+                                  <Icon name="Download" size={14} />
+                                  Экспорт выбранных
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={clearSelection}
+                                  className="gap-2"
+                                >
+                                  <Icon name="X" size={14} />
+                                  Отменить
+                                </Button>
+                              </div>
                             </div>
                           )}
 
@@ -1872,6 +1923,89 @@ const Index = () => {
             <Button onClick={handleBulkStatusChange}>
               <Icon name="Check" size={16} className="mr-2" />
               Применить
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isBulkViolationsDialogOpen} onOpenChange={setIsBulkViolationsDialogOpen}>
+        <DialogContent className="sm:max-w-[550px]">
+          <DialogHeader>
+            <DialogTitle>Массовое назначение нарушений КоАП</DialogTitle>
+            <DialogDescription>
+              Назначить типы нарушений для {selectedObjects.size} выбранных объектов
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Выбранные нарушения</Label>
+              <div className="flex flex-wrap gap-2 mb-2 min-h-[40px] p-3 border border-border rounded-lg bg-muted/30">
+                {bulkViolations.length > 0 ? (
+                  bulkViolations.map((v, i) => (
+                    <Badge key={i} variant="secondary" className="gap-1">
+                      {v}
+                      <button
+                        onClick={() => setBulkViolations(bulkViolations.filter((_, idx) => idx !== i))}
+                        className="ml-1 hover:text-destructive"
+                      >
+                        <Icon name="X" size={12} />
+                      </button>
+                    </Badge>
+                  ))
+                ) : (
+                  <span className="text-sm text-muted-foreground">Нарушения не выбраны</span>
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="bulk-violation-select">Добавить нарушение</Label>
+              <Select
+                value=""
+                onValueChange={(value) => {
+                  if (value && !bulkViolations.includes(value)) {
+                    setBulkViolations([...bulkViolations, value]);
+                  }
+                }}
+              >
+                <SelectTrigger id="bulk-violation-select">
+                  <SelectValue placeholder="Выберите нарушение КоАП ПДД" />
+                </SelectTrigger>
+                <SelectContent>
+                  {KOAP_VIOLATIONS.map((violation) => (
+                    <SelectItem 
+                      key={violation.code} 
+                      value={violation.code}
+                      disabled={bulkViolations.includes(violation.code)}
+                    >
+                      <div className="flex items-start gap-2">
+                        <span className="font-mono font-semibold">{violation.code}</span>
+                        <span className="text-muted-foreground">—</span>
+                        <span>{violation.description}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="p-4 bg-muted/50 rounded-lg border border-border">
+              <p className="text-sm text-muted-foreground">
+                <Icon name="Info" size={14} className="inline mr-1" />
+                Выбранные нарушения заменят текущие для всех отмеченных объектов
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setIsBulkViolationsDialogOpen(false);
+              setBulkViolations([]);
+            }}>
+              Отмена
+            </Button>
+            <Button onClick={handleBulkViolationsChange} disabled={bulkViolations.length === 0}>
+              <Icon name="Check" size={16} className="mr-2" />
+              Применить ({bulkViolations.length})
             </Button>
           </DialogFooter>
         </DialogContent>
