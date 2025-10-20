@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -286,6 +286,24 @@ const Index = () => {
   const [bulkStatus, setBulkStatus] = useState<'not-started' | 'in-progress' | 'paused' | 'completed'>('in-progress');
   const [isBulkViolationsDialogOpen, setIsBulkViolationsDialogOpen] = useState(false);
   const [bulkViolations, setBulkViolations] = useState<string[]>([]);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const projectId = urlParams.get('project');
+    
+    if (projectId) {
+      const project = projects.find(p => p.id === projectId);
+      if (project) {
+        setSelectedProject(project);
+        setTimeout(() => {
+          const element = document.getElementById(`project-${projectId}`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 100);
+      }
+    }
+  }, [projects]);
 
   const getProjectIcon = (type: string) => {
     switch (type) {
@@ -870,6 +888,7 @@ const Index = () => {
               {projects.map((project, index) => (
                 <Card
                   key={project.id}
+                  id={`project-${project.id}`}
                   className="animate-scale-in hover:shadow-lg transition-all border-border hover:border-primary/40"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
@@ -897,6 +916,18 @@ const Index = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="hover:bg-primary/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(`/?project=${project.id}`, '_blank', 'noopener,noreferrer');
+                          }}
+                          title="Открыть в новом окне"
+                        >
+                          <Icon name="ExternalLink" size={18} />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
