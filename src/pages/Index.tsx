@@ -281,6 +281,9 @@ const Index = () => {
     notes: '',
   });
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedObjects, setSelectedObjects] = useState<Set<string>>(new Set());
+  const [isBulkStatusDialogOpen, setIsBulkStatusDialogOpen] = useState(false);
+  const [bulkStatus, setBulkStatus] = useState<'not-started' | 'in-progress' | 'paused' | 'completed'>('in-progress');
 
   const getProjectIcon = (type: string) => {
     switch (type) {
@@ -622,6 +625,54 @@ const Index = () => {
           return true;
       }
     });
+  };
+
+  const handleToggleObject = (objectId: string) => {
+    const newSelected = new Set(selectedObjects);
+    if (newSelected.has(objectId)) {
+      newSelected.delete(objectId);
+    } else {
+      newSelected.add(objectId);
+    }
+    setSelectedObjects(newSelected);
+  };
+
+  const handleSelectAll = (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    const filteredObjects = filterObjects(project.objects);
+    const allSelected = filteredObjects.every(obj => selectedObjects.has(obj.id));
+
+    if (allSelected) {
+      const newSelected = new Set(selectedObjects);
+      filteredObjects.forEach(obj => newSelected.delete(obj.id));
+      setSelectedObjects(newSelected);
+    } else {
+      const newSelected = new Set(selectedObjects);
+      filteredObjects.forEach(obj => newSelected.add(obj.id));
+      setSelectedObjects(newSelected);
+    }
+  };
+
+  const handleBulkStatusChange = () => {
+    if (selectedObjects.size === 0) return;
+
+    setProjects(projects.map(project => ({
+      ...project,
+      objects: project.objects.map(obj =>
+        selectedObjects.has(obj.id)
+          ? { ...obj, workStatus: bulkStatus }
+          : obj
+      )
+    })));
+
+    setSelectedObjects(new Set());
+    setIsBulkStatusDialogOpen(false);
+  };
+
+  const clearSelection = () => {
+    setSelectedObjects(new Set());
   };
 
   return (
@@ -986,6 +1037,34 @@ const Index = () => {
                             </div>
                           </div>
 
+                          {selectedObjects.size > 0 && (
+                            <div className="flex items-center gap-3 p-3 bg-primary/10 rounded-lg border border-primary/20">
+                              <Icon name="CheckSquare" size={18} className="text-primary" />
+                              <span className="text-sm font-medium">
+                                Выбрано объектов: {selectedObjects.size}
+                              </span>
+                              <div className="flex-1" />
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setIsBulkStatusDialogOpen(true)}
+                                className="gap-2"
+                              >
+                                <Icon name="Edit" size={14} />
+                                Изменить статус
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={clearSelection}
+                                className="gap-2"
+                              >
+                                <Icon name="X" size={14} />
+                                Отменить
+                              </Button>
+                            </div>
+                          )}
+
                           {project.objects && project.objects.length > 0 && (
                             <>
                               {filterObjects(project.objects).length > 0 ? (
@@ -993,6 +1072,12 @@ const Index = () => {
                               <Table>
                                 <TableHeader>
                                   <TableRow>
+                                    <TableHead className="w-[50px]">
+                                      <Checkbox
+                                        checked={filterObjects(project.objects).length > 0 && filterObjects(project.objects).every(obj => selectedObjects.has(obj.id))}
+                                        onCheckedChange={() => handleSelectAll(project.id)}
+                                      />
+                                    </TableHead>
                                     <TableHead className="min-w-[150px]">Объект</TableHead>
                                     <TableHead className="min-w-[120px]">Регион</TableHead>
                                     <TableHead className="min-w-[120px]">Район</TableHead>
@@ -1020,7 +1105,13 @@ const Index = () => {
                                 </TableHeader>
                                 <TableBody>
                                   {filterObjects(project.objects).map((obj) => (
-                                    <TableRow key={obj.id}>
+                                    <TableRow key={obj.id} className={selectedObjects.has(obj.id) ? 'bg-primary/5' : ''}>
+                                      <TableCell>
+                                        <Checkbox
+                                          checked={selectedObjects.has(obj.id)}
+                                          onCheckedChange={() => handleToggleObject(obj.id)}
+                                        />
+                                      </TableCell>
                                       <TableCell className="font-medium">{obj.name}</TableCell>
                                       <TableCell>{obj.region}</TableCell>
                                       <TableCell>{obj.district}</TableCell>
@@ -1719,6 +1810,68 @@ const Index = () => {
             </Button>
             <Button onClick={editingObject ? handleUpdateObject : handleAddObject}>
               {editingObject ? 'Сохранить изменения' : 'Добавить объект'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isBulkStatusDialogOpen} onOpenChange={setIsBulkStatusDialogOpen}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle>Массовое изменение статуса</DialogTitle>
+            <DialogDescription>
+              Изменить статус работ для {selectedObjects.size} выбранных объектов
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="bulk-status">Новый статус</Label>
+              <Select
+                value={bulkStatus}
+                onValueChange={(value) => setBulkStatus(value as any)}
+              >
+                <SelectTrigger id="bulk-status">
+                  <SelectValue placeholder="Выберите статус" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="not-started">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-xs">Не взято в работу</Badge>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="in-progress">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="default" className="text-xs">В работе</Badge>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="paused">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">Приостановлено</Badge>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="completed">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="default" className="text-xs bg-green-500">Выполнено</Badge>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="p-4 bg-muted/50 rounded-lg border border-border">
+              <p className="text-sm text-muted-foreground">
+                <Icon name="Info" size={14} className="inline mr-1" />
+                Статус будет обновлен для всех выбранных объектов одновременно
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsBulkStatusDialogOpen(false)}>
+              Отмена
+            </Button>
+            <Button onClick={handleBulkStatusChange}>
+              <Icon name="Check" size={16} className="mr-2" />
+              Применить
             </Button>
           </DialogFooter>
         </DialogContent>
