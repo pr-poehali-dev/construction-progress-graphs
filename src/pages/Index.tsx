@@ -38,6 +38,7 @@ interface ProjectObject {
   documentationUrl: string;
   workStatus: 'not-started' | 'in-progress' | 'paused' | 'completed';
   notes: string;
+  stageId?: string;
 }
 
 interface Project {
@@ -55,6 +56,7 @@ interface Project {
 }
 
 interface Stage {
+  id: string;
   name: string;
   progress: number;
   startDate: string;
@@ -74,10 +76,10 @@ const mockProjects: Project[] = [
     startDate: '2024-01-15',
     endDate: '2025-08-30',
     stages: [
-      { name: 'Проектирование', progress: 100, startDate: '2024-01-15', endDate: '2024-03-20', status: 'completed' },
-      { name: 'Подготовка территории', progress: 100, startDate: '2024-03-21', endDate: '2024-05-10', status: 'completed' },
-      { name: 'Основное строительство', progress: 78, startDate: '2024-05-11', endDate: '2025-06-15', status: 'in-progress' },
-      { name: 'Благоустройство', progress: 0, startDate: '2025-06-16', endDate: '2025-08-30', status: 'pending' },
+      { id: 's1-1', name: 'Проектирование', progress: 100, startDate: '2024-01-15', endDate: '2024-03-20', status: 'completed' },
+      { id: 's1-2', name: 'Подготовка территории', progress: 100, startDate: '2024-03-21', endDate: '2024-05-10', status: 'completed' },
+      { id: 's1-3', name: 'Основное строительство', progress: 78, startDate: '2024-05-11', endDate: '2025-06-15', status: 'in-progress' },
+      { id: 's1-4', name: 'Благоустройство', progress: 0, startDate: '2025-06-16', endDate: '2025-08-30', status: 'pending' },
     ],
     objects: [
       {
@@ -143,10 +145,10 @@ const mockProjects: Project[] = [
     startDate: '2024-02-01',
     endDate: '2026-11-20',
     stages: [
-      { name: 'Инженерные изыскания', progress: 100, startDate: '2024-02-01', endDate: '2024-04-30', status: 'completed' },
-      { name: 'Строительство опор', progress: 85, startDate: '2024-05-01', endDate: '2025-02-28', status: 'in-progress' },
-      { name: 'Монтаж пролетов', progress: 12, startDate: '2025-03-01', endDate: '2026-08-15', status: 'in-progress' },
-      { name: 'Финишные работы', progress: 0, startDate: '2026-08-16', endDate: '2026-11-20', status: 'pending' },
+      { id: 's2-1', name: 'Инженерные изыскания', progress: 100, startDate: '2024-02-01', endDate: '2024-04-30', status: 'completed' },
+      { id: 's2-2', name: 'Строительство опор', progress: 85, startDate: '2024-05-01', endDate: '2025-02-28', status: 'in-progress' },
+      { id: 's2-3', name: 'Монтаж пролетов', progress: 12, startDate: '2025-03-01', endDate: '2026-08-15', status: 'in-progress' },
+      { id: 's2-4', name: 'Финишные работы', progress: 0, startDate: '2026-08-16', endDate: '2026-11-20', status: 'pending' },
     ],
     objects: [
       {
@@ -187,10 +189,10 @@ const mockProjects: Project[] = [
     startDate: '2024-03-10',
     endDate: '2025-01-25',
     stages: [
-      { name: 'Проектная документация', progress: 100, startDate: '2024-03-10', endDate: '2024-04-25', status: 'completed' },
-      { name: 'Прокладка магистралей', progress: 100, startDate: '2024-04-26', endDate: '2024-10-15', status: 'completed' },
-      { name: 'Подключение объектов', progress: 95, startDate: '2024-10-16', endDate: '2025-01-10', status: 'in-progress' },
-      { name: 'Испытания системы', progress: 40, startDate: '2025-01-11', endDate: '2025-01-25', status: 'in-progress' },
+      { id: 's3-1', name: 'Проектная документация', progress: 100, startDate: '2024-03-10', endDate: '2024-04-25', status: 'completed' },
+      { id: 's3-2', name: 'Прокладка магистралей', progress: 100, startDate: '2024-04-26', endDate: '2024-10-15', status: 'completed' },
+      { id: 's3-3', name: 'Подключение объектов', progress: 95, startDate: '2024-10-16', endDate: '2025-01-10', status: 'in-progress' },
+      { id: 's3-4', name: 'Испытания системы', progress: 40, startDate: '2025-01-11', endDate: '2025-01-25', status: 'in-progress' },
     ],
     objects: [
       {
@@ -286,6 +288,16 @@ const Index = () => {
   const [bulkStatus, setBulkStatus] = useState<'not-started' | 'in-progress' | 'paused' | 'completed'>('in-progress');
   const [isBulkViolationsDialogOpen, setIsBulkViolationsDialogOpen] = useState(false);
   const [bulkViolations, setBulkViolations] = useState<string[]>([]);
+  const [isStageDialogOpen, setIsStageDialogOpen] = useState(false);
+  const [editingStage, setEditingStage] = useState<Stage | null>(null);
+  const [newStage, setNewStage] = useState<Partial<Stage>>({
+    name: '',
+    progress: 0,
+    startDate: '',
+    endDate: '',
+    status: 'pending',
+  });
+  const [selectedStageFilter, setSelectedStageFilter] = useState<string>('all');
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -370,6 +382,7 @@ const Index = () => {
       endDate: newProject.endDate,
       stages: [
         {
+          id: `stage-${Date.now()}`,
           name: 'Проектирование',
           progress: 0,
           startDate: newProject.startDate,
@@ -633,9 +646,19 @@ const Index = () => {
   };
 
   const filterObjects = (objects: ProjectObject[]) => {
-    if (statusFilter === 'all') return objects;
+    let filtered = objects;
     
-    return objects.filter((obj) => {
+    if (selectedStageFilter !== 'all') {
+      if (selectedStageFilter === 'no-stage') {
+        filtered = filtered.filter(obj => !obj.stageId);
+      } else {
+        filtered = filtered.filter(obj => obj.stageId === selectedStageFilter);
+      }
+    }
+    
+    if (statusFilter === 'all') return filtered;
+    
+    return filtered.filter((obj) => {
       switch (statusFilter) {
         case 'completed':
           return obj.constructionWork && obj.commissioningWork && obj.executiveDocumentation;
@@ -717,6 +740,98 @@ const Index = () => {
     setSelectedObjects(new Set());
     setBulkViolations([]);
     setIsBulkViolationsDialogOpen(false);
+  };
+
+  const handleAddStage = () => {
+    if (!currentProjectId || !newStage.name) {
+      return;
+    }
+
+    const stage: Stage = {
+      id: Date.now().toString(),
+      name: newStage.name,
+      progress: newStage.progress || 0,
+      startDate: newStage.startDate || '',
+      endDate: newStage.endDate || '',
+      status: newStage.status || 'pending',
+    };
+
+    if (editingStage) {
+      setProjects(
+        projects.map((p) =>
+          p.id === currentProjectId
+            ? {
+                ...p,
+                stages: p.stages.map((s) =>
+                  s.id === editingStage.id ? { ...stage, id: editingStage.id } : s
+                ),
+              }
+            : p
+        )
+      );
+    } else {
+      setProjects(
+        projects.map((p) =>
+          p.id === currentProjectId ? { ...p, stages: [...p.stages, stage] } : p
+        )
+      );
+    }
+
+    setIsStageDialogOpen(false);
+    setEditingStage(null);
+    setNewStage({
+      name: '',
+      progress: 0,
+      startDate: '',
+      endDate: '',
+      status: 'pending',
+    });
+  };
+
+  const handleDeleteStage = (projectId: string, stageId: string) => {
+    setProjects(
+      projects.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              stages: p.stages.filter((s) => s.id !== stageId),
+              objects: p.objects.filter((obj) => obj.stageId !== stageId),
+            }
+          : p
+      )
+    );
+  };
+
+  const openAddStageDialog = (projectId: string) => {
+    setCurrentProjectId(projectId);
+    setEditingStage(null);
+    setNewStage({
+      name: '',
+      progress: 0,
+      startDate: '',
+      endDate: '',
+      status: 'pending',
+    });
+    setIsStageDialogOpen(true);
+  };
+
+  const openEditStageDialog = (projectId: string, stage: Stage) => {
+    setCurrentProjectId(projectId);
+    setEditingStage(stage);
+    setNewStage({
+      name: stage.name,
+      progress: stage.progress,
+      startDate: stage.startDate,
+      endDate: stage.endDate,
+      status: stage.status,
+    });
+    setIsStageDialogOpen(true);
+  };
+
+  const filterObjectsByStage = (objects: ProjectObject[], stageId: string) => {
+    if (stageId === 'all') return objects;
+    if (stageId === 'no-stage') return objects.filter(obj => !obj.stageId);
+    return objects.filter(obj => obj.stageId === stageId);
   };
 
   return (
@@ -988,18 +1103,29 @@ const Index = () => {
 
                     {selectedProject?.id === project.id && (
                       <div className="pt-4 border-t border-border animate-accordion-down space-y-4">
-                        <h4 className="font-semibold flex items-center gap-2">
-                          <Icon name="ListChecks" size={18} />
-                          Этапы строительства
-                        </h4>
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-semibold flex items-center gap-2">
+                            <Icon name="ListChecks" size={18} />
+                            Этапы строительства
+                          </h4>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openAddStageDialog(project.id)}
+                            className="gap-2"
+                          >
+                            <Icon name="Plus" size={14} />
+                            Добавить этап
+                          </Button>
+                        </div>
                         <div className="space-y-3">
-                          {project.stages.map((stage, idx) => (
+                          {project.stages.map((stage) => (
                             <div
-                              key={idx}
+                              key={stage.id}
                               className="p-4 rounded-lg bg-muted/30 border border-border hover:border-primary/30 transition-colors"
                             >
                               <div className="flex items-start justify-between mb-3">
-                                <div className="flex items-start gap-3">
+                                <div className="flex items-start gap-3 flex-1">
                                   <div
                                     className={`mt-1 h-2 w-2 rounded-full ${
                                       stage.status === 'completed'
@@ -1009,7 +1135,7 @@ const Index = () => {
                                         : 'bg-gray-500'
                                     }`}
                                   />
-                                  <div>
+                                  <div className="flex-1">
                                     <p className="font-medium mb-1">{stage.name}</p>
                                     <p className="text-xs text-muted-foreground">
                                       {new Date(stage.startDate).toLocaleDateString('ru-RU')} -{' '}
@@ -1017,18 +1143,36 @@ const Index = () => {
                                     </p>
                                   </div>
                                 </div>
-                                <Badge
-                                  variant="outline"
-                                  className={
-                                    stage.status === 'completed'
-                                      ? 'bg-green-500/10 text-green-500 border-green-500/20'
-                                      : stage.status === 'in-progress'
-                                      ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
-                                      : 'bg-gray-500/10 text-gray-500 border-gray-500/20'
-                                  }
-                                >
-                                  {stage.progress}%
-                                </Badge>
+                                <div className="flex items-center gap-2">
+                                  <Badge
+                                    variant="outline"
+                                    className={
+                                      stage.status === 'completed'
+                                        ? 'bg-green-500/10 text-green-500 border-green-500/20'
+                                        : stage.status === 'in-progress'
+                                        ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                                        : 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+                                    }
+                                  >
+                                    {stage.progress}%
+                                  </Badge>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={() => openEditStageDialog(project.id, stage)}
+                                  >
+                                    <Icon name="Pencil" size={14} />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-destructive hover:text-destructive"
+                                    onClick={() => handleDeleteStage(project.id, stage.id)}
+                                  >
+                                    <Icon name="Trash2" size={14} />
+                                  </Button>
+                                </div>
                               </div>
                               <Progress value={stage.progress} className="h-2" />
                             </div>
@@ -1060,6 +1204,20 @@ const Index = () => {
                               Объекты проекта
                             </h4>
                             <div className="flex flex-wrap items-center gap-2">
+                              <Select value={selectedStageFilter} onValueChange={setSelectedStageFilter}>
+                                <SelectTrigger className="w-[200px]">
+                                  <SelectValue placeholder="Фильтр по этапу" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="all">Все этапы</SelectItem>
+                                  <SelectItem value="no-stage">Без этапа</SelectItem>
+                                  {project.stages.map((stage) => (
+                                    <SelectItem key={stage.id} value={stage.id}>
+                                      {stage.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                               <Select value={statusFilter} onValueChange={setStatusFilter}>
                                 <SelectTrigger className="w-[200px]">
                                   <SelectValue placeholder="Фильтр по статусу" />
@@ -1161,6 +1319,7 @@ const Index = () => {
                                       />
                                     </TableHead>
                                     <TableHead className="min-w-[150px]">Объект</TableHead>
+                                    <TableHead className="min-w-[150px]">Этап</TableHead>
                                     <TableHead className="min-w-[120px]">Регион</TableHead>
                                     <TableHead className="min-w-[120px]">Район</TableHead>
                                     <TableHead className="min-w-[150px]">Локация</TableHead>
@@ -1195,6 +1354,15 @@ const Index = () => {
                                         />
                                       </TableCell>
                                       <TableCell className="font-medium">{obj.name}</TableCell>
+                                      <TableCell>
+                                        {obj.stageId ? (
+                                          <Badge variant="outline" className="text-xs">
+                                            {project.stages.find(s => s.id === obj.stageId)?.name || 'Этап удален'}
+                                          </Badge>
+                                        ) : (
+                                          <span className="text-xs text-muted-foreground">-</span>
+                                        )}
+                                      </TableCell>
                                       <TableCell>{obj.region}</TableCell>
                                       <TableCell>{obj.district}</TableCell>
                                       <TableCell>{obj.location}</TableCell>
@@ -1825,6 +1993,28 @@ const Index = () => {
                 />
               </div>
               <div className="grid gap-2">
+                <Label htmlFor="stage">Этап проекта</Label>
+                <Select 
+                  value={newObject.stageId || 'no-stage'} 
+                  onValueChange={(value) => setNewObject({ ...newObject, stageId: value === 'no-stage' ? undefined : value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Выберите этап" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="no-stage">Без этапа</SelectItem>
+                    {currentProjectId && projects.find(p => p.id === currentProjectId)?.stages.map((stage) => (
+                      <SelectItem key={stage.id} value={stage.id}>
+                        {stage.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
                 <Label htmlFor="region">Регион</Label>
                 <Input
                   id="region"
@@ -1833,9 +2023,6 @@ const Index = () => {
                   onChange={(e) => setNewObject({ ...newObject, region: e.target.value })}
                 />
               </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="district">Район</Label>
                 <Input
@@ -1845,6 +2032,9 @@ const Index = () => {
                   onChange={(e) => setNewObject({ ...newObject, district: e.target.value })}
                 />
               </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="location">Локация</Label>
                 <Input
@@ -2229,6 +2419,91 @@ const Index = () => {
             <Button onClick={handleBulkViolationsChange} disabled={bulkViolations.length === 0}>
               <Icon name="Check" size={16} className="mr-2" />
               Применить ({bulkViolations.length})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isStageDialogOpen} onOpenChange={setIsStageDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingStage ? 'Редактировать этап' : 'Новый этап'}</DialogTitle>
+            <DialogDescription>
+              Заполните информацию об этапе проекта
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="stage-name">Название этапа *</Label>
+              <Input
+                id="stage-name"
+                placeholder="Например: Прокладка коммуникаций"
+                value={newStage.name}
+                onChange={(e) => setNewStage({ ...newStage, name: e.target.value })}
+              />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="stage-start">Дата начала</Label>
+                <Input
+                  id="stage-start"
+                  type="date"
+                  value={newStage.startDate}
+                  onChange={(e) => setNewStage({ ...newStage, startDate: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="stage-end">Дата окончания</Label>
+                <Input
+                  id="stage-end"
+                  type="date"
+                  value={newStage.endDate}
+                  onChange={(e) => setNewStage({ ...newStage, endDate: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="stage-progress">Прогресс (%)</Label>
+                <Input
+                  id="stage-progress"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={newStage.progress}
+                  onChange={(e) => setNewStage({ ...newStage, progress: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="stage-status">Статус</Label>
+                <Select 
+                  value={newStage.status} 
+                  onValueChange={(value) => setNewStage({ ...newStage, status: value as 'completed' | 'in-progress' | 'pending' })}
+                >
+                  <SelectTrigger id="stage-status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Ожидание</SelectItem>
+                    <SelectItem value="in-progress">В работе</SelectItem>
+                    <SelectItem value="completed">Завершен</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setIsStageDialogOpen(false);
+              setEditingStage(null);
+            }}>
+              Отмена
+            </Button>
+            <Button onClick={handleAddStage} disabled={!newStage.name}>
+              <Icon name="Check" size={16} className="mr-2" />
+              {editingStage ? 'Сохранить' : 'Добавить'}
             </Button>
           </DialogFooter>
         </DialogContent>
