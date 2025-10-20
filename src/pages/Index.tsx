@@ -38,6 +38,7 @@ interface ProjectObject {
   documentationUrl: string;
   workStatus: 'not-started' | 'in-progress' | 'paused' | 'completed';
   notes: string;
+  messengerLink: string;
   stageId?: string;
   deliveryStage?: '1' | '2' | '3' | '4' | '5';
 }
@@ -107,6 +108,7 @@ const mockProjects: Project[] = [
         documentationUrl: 'https://docs.example.com/m12-km10-15',
         workStatus: 'in-progress',
         notes: 'Ожидается подключение к сети',
+        messengerLink: 'https://t.me/road_manager',
       },
       {
         id: '1-2',
@@ -132,6 +134,7 @@ const mockProjects: Project[] = [
         documentationUrl: '',
         workStatus: 'not-started',
         notes: 'Требуется согласование ТУ',
+        messengerLink: '',
       },
     ],
   },
@@ -176,6 +179,7 @@ const mockProjects: Project[] = [
         documentationUrl: 'https://docs.example.com/bridge-volga',
         workStatus: 'completed',
         notes: 'Готово к эксплуатации',
+        messengerLink: 'https://wa.me/79001234567',
       },
     ],
   },
@@ -220,6 +224,7 @@ const mockProjects: Project[] = [
         documentationUrl: 'https://docs.example.com/pump-ld-001',
         workStatus: 'in-progress',
         notes: 'На стадии испытаний',
+        messengerLink: '',
       },
     ],
   },
@@ -282,6 +287,7 @@ const Index = () => {
     documentationUrl: '',
     workStatus: 'not-started',
     notes: '',
+    messengerLink: '',
   });
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedObjects, setSelectedObjects] = useState<Set<string>>(new Set());
@@ -442,6 +448,7 @@ const Index = () => {
       documentationUrl: newObject.documentationUrl || '',
       workStatus: newObject.workStatus || 'not-started',
       notes: newObject.notes || '',
+      messengerLink: newObject.messengerLink || '',
     };
 
     setProjects(
@@ -482,6 +489,7 @@ const Index = () => {
       documentationUrl: newObject.documentationUrl || editingObject.documentationUrl,
       workStatus: newObject.workStatus || editingObject.workStatus,
       notes: newObject.notes || editingObject.notes,
+      messengerLink: newObject.messengerLink || editingObject.messengerLink,
     };
 
     setProjects(
@@ -570,6 +578,7 @@ const Index = () => {
       documentationUrl: '',
       workStatus: 'not-started',
       notes: '',
+      messengerLink: '',
     });
   };
 
@@ -638,6 +647,7 @@ const Index = () => {
       'Ссылка на документацию': obj.documentationUrl || '-',
       'Статус работ': getWorkStatusText(obj.workStatus || 'not-started'),
       'Примечание': obj.notes || '-',
+      'Ссылка на мессенджер': obj.messengerLink || '-',
     }));
 
     const ws = XLSX.utils.json_to_sheet(data);
@@ -706,6 +716,7 @@ const Index = () => {
             documentationUrl: row['Ссылка на документацию'] || existingObject?.documentationUrl || '',
             workStatus: existingObject?.workStatus || 'not-started',
             notes: row['Примечание'] || existingObject?.notes || '',
+            messengerLink: row['Ссылка на мессенджер'] || existingObject?.messengerLink || '',
             stageId: existingObject?.stageId,
             deliveryStage: row['Этап сдачи'] 
               ? (String(row['Этап сдачи']).replace(/[^\d]/g, '') as '1' | '2' | '3' | '4' | '5')
@@ -1543,6 +1554,7 @@ const Index = () => {
                                     <TableHead className="min-w-[250px]">Ссылка на документацию</TableHead>
                                     <TableHead className="min-w-[150px]">Статус работ</TableHead>
                                     <TableHead className="min-w-[200px]">Примечание</TableHead>
+                                    <TableHead className="min-w-[200px]">Мессенджер</TableHead>
                                     <TableHead className="w-[100px]">Действия</TableHead>
                                   </TableRow>
                                 </TableHeader>
@@ -1874,6 +1886,19 @@ const Index = () => {
                                         </Badge>
                                       </TableCell>
                                       <TableCell className="text-xs max-w-[200px]">{obj.notes || '-'}</TableCell>
+                                      <TableCell className="text-xs max-w-[200px]">
+                                        {obj.messengerLink ? (
+                                          <a 
+                                            href={obj.messengerLink} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="text-primary hover:underline flex items-center gap-1"
+                                          >
+                                            <Icon name="MessageCircle" size={14} />
+                                            Открыть
+                                          </a>
+                                        ) : '-'}
+                                      </TableCell>
                                       <TableCell>
                                         <div className="flex gap-1">
                                           <Button
@@ -2516,6 +2541,18 @@ const Index = () => {
                 value={newObject.notes}
                 onChange={(e) => setNewObject({ ...newObject, notes: e.target.value })}
               />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="messenger-link">Ссылка на мессенджер</Label>
+              <Input
+                id="messenger-link"
+                type="url"
+                placeholder="https://t.me/username или https://wa.me/79001234567"
+                value={newObject.messengerLink}
+                onChange={(e) => setNewObject({ ...newObject, messengerLink: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">Telegram, WhatsApp или другой мессенджер</p>
             </div>
           </div>
           <DialogFooter>
