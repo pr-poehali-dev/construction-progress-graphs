@@ -1281,7 +1281,29 @@ const Index = () => {
                                         )}
                                       </TableCell>
                                       <TableCell>
-                                        <Badge variant={getWorkStatusColor(obj.workStatus || 'not-started')} className="text-xs">
+                                        <Badge 
+                                          variant={getWorkStatusColor(obj.workStatus || 'not-started')} 
+                                          className="text-xs cursor-pointer hover:opacity-80 transition-opacity"
+                                          onClick={() => {
+                                            const currentStatus = obj.workStatus || 'not-started';
+                                            const statuses: Array<'not-started' | 'in-progress' | 'paused' | 'completed'> = ['not-started', 'in-progress', 'paused', 'completed'];
+                                            const currentIndex = statuses.indexOf(currentStatus);
+                                            const nextStatus = statuses[(currentIndex + 1) % statuses.length];
+                                            
+                                            setProjects(projects.map(p => 
+                                              p.id === project.id 
+                                                ? {
+                                                    ...p,
+                                                    objects: p.objects.map(o => 
+                                                      o.id === obj.id 
+                                                        ? { ...o, workStatus: nextStatus }
+                                                        : o
+                                                    )
+                                                  }
+                                                : p
+                                            ));
+                                          }}
+                                        >
                                           {getWorkStatusText(obj.workStatus || 'not-started')}
                                         </Badge>
                                       </TableCell>
