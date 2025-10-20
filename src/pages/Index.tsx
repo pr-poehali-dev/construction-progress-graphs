@@ -39,6 +39,7 @@ interface ProjectObject {
   workStatus: 'not-started' | 'in-progress' | 'paused' | 'completed';
   notes: string;
   stageId?: string;
+  deliveryStage?: '1' | '2' | '3' | '4' | '5';
 }
 
 interface Project {
@@ -613,6 +614,7 @@ const Index = () => {
 
     const data = objectsToExport.map((obj) => ({
       'Объект': obj.name,
+      'Этап сдачи': obj.deliveryStage ? `${obj.deliveryStage} этап` : '-',
       'Регион': obj.region,
       'Район': obj.district,
       'Локация': obj.location,
@@ -1320,6 +1322,7 @@ const Index = () => {
                                     </TableHead>
                                     <TableHead className="min-w-[150px]">Объект</TableHead>
                                     <TableHead className="min-w-[150px]">Этап</TableHead>
+                                    <TableHead className="min-w-[120px]">Этап сдачи</TableHead>
                                     <TableHead className="min-w-[120px]">Регион</TableHead>
                                     <TableHead className="min-w-[120px]">Район</TableHead>
                                     <TableHead className="min-w-[150px]">Локация</TableHead>
@@ -1362,6 +1365,32 @@ const Index = () => {
                                         ) : (
                                           <span className="text-xs text-muted-foreground">-</span>
                                         )}
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge 
+                                          variant={obj.deliveryStage ? 'default' : 'secondary'}
+                                          className="text-xs cursor-pointer hover:opacity-80 transition-opacity"
+                                          onClick={() => {
+                                            const stages: Array<'1' | '2' | '3' | '4' | '5' | undefined> = ['1', '2', '3', '4', '5', undefined];
+                                            const currentIndex = obj.deliveryStage ? stages.indexOf(obj.deliveryStage) : -1;
+                                            const nextStage = stages[(currentIndex + 1) % stages.length];
+                                            
+                                            setProjects(projects.map(p => 
+                                              p.id === project.id 
+                                                ? {
+                                                    ...p,
+                                                    objects: p.objects.map(o => 
+                                                      o.id === obj.id 
+                                                        ? { ...o, deliveryStage: nextStage }
+                                                        : o
+                                                    )
+                                                  }
+                                                : p
+                                            ));
+                                          }}
+                                        >
+                                          {obj.deliveryStage ? `${obj.deliveryStage} этап` : '-'}
+                                        </Badge>
                                       </TableCell>
                                       <TableCell>{obj.region}</TableCell>
                                       <TableCell>{obj.district}</TableCell>
@@ -2008,6 +2037,28 @@ const Index = () => {
                         {stage.name}
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="delivery-stage">Этап сдачи объекта</Label>
+                <Select 
+                  value={newObject.deliveryStage || 'none'} 
+                  onValueChange={(value) => setNewObject({ ...newObject, deliveryStage: value === 'none' ? undefined : value as '1' | '2' | '3' | '4' | '5' })}
+                >
+                  <SelectTrigger id="delivery-stage">
+                    <SelectValue placeholder="Выберите этап сдачи" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Не указан</SelectItem>
+                    <SelectItem value="1">1 этап</SelectItem>
+                    <SelectItem value="2">2 этап</SelectItem>
+                    <SelectItem value="3">3 этап</SelectItem>
+                    <SelectItem value="4">4 этап</SelectItem>
+                    <SelectItem value="5">5 этап</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
