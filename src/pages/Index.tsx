@@ -614,6 +614,7 @@ const Index = () => {
     if (objectsToExport.length === 0) return;
 
     const data = objectsToExport.map((obj) => ({
+      'ID': obj.id,
       'Объект': obj.name,
       'Этап сдачи': obj.deliveryStage ? `${obj.deliveryStage} этап` : '-',
       'Регион': obj.region,
@@ -640,12 +641,109 @@ const Index = () => {
     }));
 
     const ws = XLSX.utils.json_to_sheet(data);
+    
+    if (!ws['!cols']) ws['!cols'] = [];
+    ws['!cols'][0] = { hidden: true };
+    
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Объекты');
 
     const suffix = selectedOnly ? `_выбранные_${objectsToExport.length}` : '_объекты';
     const fileName = `${project.name}${suffix}_${new Date().toLocaleDateString('ru-RU')}.xlsx`;
     XLSX.writeFile(wb, fileName);
+  };
+
+  const handleImportObjects = (projectId: string, file: File) => {
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet) as any[];
+        
+        if (!jsonData || jsonData.length === 0) {
+          alert('Файл пуст или имеет неверный формат');
+          return;
+        }
+
+        const project = projects.find(p => p.id === projectId);
+        if (!project) return;
+
+        const existingObjectsMap = new Map(project.objects.map(obj => [obj.id, obj]));
+        const importedObjects: ProjectObject[] = [];
+        let updatedCount = 0;
+        let createdCount = 0;
+
+        jsonData.forEach((row) => {
+          const objectId = row['ID'] || row['id'] || row['Идентификатор'];
+          const existingObject = objectId ? existingObjectsMap.get(objectId) : null;
+
+          const importedObject: ProjectObject = {
+            id: existingObject?.id || `obj-${Date.now()}-${Math.random()}`,
+            name: row['Объект'] || existingObject?.name || '',
+            region: row['Регион'] || existingObject?.region || '',
+            district: row['Район'] || existingObject?.district || '',
+            location: row['Локация'] || existingObject?.location || '',
+            coordinates: row['Координаты'] || existingObject?.coordinates || '',
+            inspection: row['Обследование'] === 'Выполнено' || existingObject?.inspection || false,
+            poleInstallationPermit: row['ТУ на установку опор'] === 'Получено' || existingObject?.poleInstallationPermit || false,
+            powerConnectionPermit: row['ТУ на подключение к электропитанию'] === 'Получено' || existingObject?.powerConnectionPermit || false,
+            otherPermits: row['Другие разрешения'] || existingObject?.otherPermits || '',
+            equipmentNumber: row['Номер оборудования'] || existingObject?.equipmentNumber || '',
+            quantity: Number(row['Количество']) || existingObject?.quantity || 1,
+            verificationCertificate: row['Свидетельство о поверке'] === 'Есть' || existingObject?.verificationCertificate || false,
+            executiveDocumentation: row['Исполнительная документация'] === 'Готово' || existingObject?.executiveDocumentation || false,
+            constructionWork: row['Строительно-монтажные работы'] === 'Завершено' || existingObject?.constructionWork || false,
+            commissioningWork: row['Пуско-наладочные работы'] === 'Завершено' || existingObject?.commissioningWork || false,
+            trafficArrangement: row['ПОДД'] === 'Да' || existingObject?.trafficArrangement || false,
+            webUpload: row['Выгрузка в Паутину'] === 'Выполнено' || existingObject?.webUpload || false,
+            violationRecording: row['Фиксация нарушений'] === 'Да' || existingObject?.violationRecording || false,
+            violationTypes: row['Типы нарушений КоАП'] 
+              ? String(row['Типы нарушений КоАП']).split(',').map(s => s.trim()).filter(Boolean)
+              : existingObject?.violationTypes || [],
+            documentationUrl: row['Ссылка на документацию'] || existingObject?.documentationUrl || '',
+            workStatus: existingObject?.workStatus || 'not-started',
+            notes: row['Примечание'] || existingObject?.notes || '',
+            stageId: existingObject?.stageId,
+            deliveryStage: row['Этап сдачи'] 
+              ? (String(row['Этап сдачи']).replace(/[^\d]/g, '') as '1' | '2' | '3' | '4' | '5')
+              : existingObject?.deliveryStage,
+          };
+
+          if (existingObject) {
+            updatedCount++;
+          } else {
+            createdCount++;
+          }
+
+          importedObjects.push(importedObject);
+        });
+
+        const finalObjects = project.objects
+          .map(obj => {
+            const imported = importedObjects.find(imp => imp.id === obj.id);
+            return imported || obj;
+          })
+          .concat(
+            importedObjects.filter(imp => !existingObjectsMap.has(imp.id))
+          );
+
+        setProjects(projects.map(p => 
+          p.id === projectId 
+            ? { ...p, objects: finalObjects }
+            : p
+        ));
+
+        alert(`Импорт завершен!\nОбновлено: ${updatedCount} объектов\nСоздано: ${createdCount} новых объектов`);
+      } catch (error) {
+        console.error('Ошибка импорта:', error);
+        alert('Ошибка при обработке файла. Проверьте формат данных.');
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
   };
 
   const filterObjects = (objects: ProjectObject[]) => {
@@ -1323,6 +1421,26 @@ const Index = () => {
                               >
                                 <Icon name="Download" size={14} />
                                 Экспорт Excel
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  const input = document.createElement('input');
+                                  input.type = 'file';
+                                  input.accept = '.xlsx,.xls';
+                                  input.onchange = (e) => {
+                                    const file = (e.target as HTMLInputElement).files?.[0];
+                                    if (file) {
+                                      handleImportObjects(project.id, file);
+                                    }
+                                  };
+                                  input.click();
+                                }}
+                                className="gap-2"
+                              >
+                                <Icon name="Upload" size={14} />
+                                Импорт Excel
                               </Button>
                               <Button
                                 size="sm"
