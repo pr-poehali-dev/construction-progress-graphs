@@ -31,6 +31,9 @@ interface ProjectObject {
   messengerLink: string;
   stageId?: string;
   deliveryStage?: '1' | '2' | '3' | '4' | '5';
+  operator: 'МТС' | 'Мегафон' | 'Билайн' | 'Ростелеком' | 'Другой';
+  connectionType: 'GSM' | 'Оптический канал' | 'WI-FI' | 'Другое';
+  tariffCost: number;
 }
 
 interface ObjectTableRowProps {
@@ -139,6 +142,9 @@ export function ObjectTableRow({ obj, onEdit, onExport }: ObjectTableRowProps) {
           </a>
         ) : '-'}
       </TableCell>
+      <TableCell>{obj.operator}</TableCell>
+      <TableCell>{obj.connectionType}</TableCell>
+      <TableCell>{obj.tariffCost.toLocaleString('ru-RU')} ₽</TableCell>
       <TableCell>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => onEdit(obj)}>

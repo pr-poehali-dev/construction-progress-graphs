@@ -294,6 +294,9 @@ const Index = () => {
     workStatus: 'not-started',
     notes: '',
     messengerLink: '',
+    operator: 'МТС',
+    connectionType: 'GSM',
+    tariffCost: 0,
   });
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedObjects, setSelectedObjects] = useState<Set<string>>(new Set());
@@ -730,6 +733,9 @@ const Index = () => {
             deliveryStage: row['Этап сдачи'] 
               ? (String(row['Этап сдачи']).replace(/[^\d]/g, '') as '1' | '2' | '3' | '4' | '5')
               : existingObject?.deliveryStage,
+            operator: (row['Оператор связи'] as any) || existingObject?.operator || 'МТС',
+            connectionType: (row['Тип связи'] as any) || existingObject?.connectionType || 'GSM',
+            tariffCost: Number(row['Стоимость тарифа (₽/мес)']) || Number(row['Стоимость тарифа']) || existingObject?.tariffCost || 0,
           };
 
           if (existingObject) {
@@ -1564,6 +1570,9 @@ const Index = () => {
                                     <TableHead className="min-w-[150px]">Статус работ</TableHead>
                                     <TableHead className="min-w-[200px]">Примечание</TableHead>
                                     <TableHead className="min-w-[200px]">Мессенджер</TableHead>
+                                    <TableHead className="min-w-[140px]">Оператор связи</TableHead>
+                                    <TableHead className="min-w-[160px]">Тип связи</TableHead>
+                                    <TableHead className="min-w-[140px]">Стоимость тарифа</TableHead>
                                     <TableHead className="w-[100px]">Действия</TableHead>
                                   </TableRow>
                                 </TableHeader>
