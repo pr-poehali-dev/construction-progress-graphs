@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import * as XLSX from 'xlsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -251,12 +253,19 @@ const KOAP_VIOLATIONS = [
 ];
 
 const Index = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>(mockProjects);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isObjectDialogOpen, setIsObjectDialogOpen] = useState(false);
   const [editingObject, setEditingObject] = useState<ProjectObject | null>(null);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
   const [newProject, setNewProject] = useState<Partial<Project>>({
     name: '',
     type: 'road',
@@ -976,10 +985,24 @@ const Index = () => {
               </div>
             </div>
             <div className="flex items-center gap-4">
+              <div className="text-sm">
+                <p className="text-muted-foreground">Вошли как:</p>
+                <p className="font-medium">{user?.email} ({user?.role === 'admin' ? 'Администратор' : 'Пользователь'})</p>
+              </div>
+              {user?.role === 'admin' && (
+                <Button variant="outline" onClick={() => navigate('/admin')}>
+                  <Icon name="Settings" className="mr-2" size={16} />
+                  Администрирование
+                </Button>
+              )}
               <Badge variant="outline" className="px-3 py-1">
                 <Icon name="Activity" className="mr-2" size={14} />
                 {projects.length} проектов
               </Badge>
+              <Button variant="outline" onClick={handleLogout}>
+                <Icon name="LogOut" className="mr-2" size={16} />
+                Выйти
+              </Button>
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="gap-2">
