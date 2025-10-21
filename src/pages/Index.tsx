@@ -72,7 +72,7 @@ export default function Index() {
               <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 СтройМонитор
               </h1>
-              <p className="text-sm text-muted-foreground">Управление дорожными проектами</p>
+              <p className="text-sm text-muted-foreground">Управление прикладными проектами</p>
             </div>
           </div>
         </div>
