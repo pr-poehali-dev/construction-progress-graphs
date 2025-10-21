@@ -1,5 +1,6 @@
 const AUTH_API = 'https://functions.poehali.dev/df1703c9-8422-4f5d-97c6-b2b96ab128fb';
 const USERS_API = 'https://functions.poehali.dev/72f4a1f3-1475-454e-bd8e-95ba293f5cd9';
+const EMAIL_API = 'https://functions.poehali.dev/f2770523-d500-49c0-ae46-1d2c51247691';
 
 export interface User {
   id: number;
@@ -13,7 +14,24 @@ export interface AuthResponse {
   user: User;
 }
 
-export const login = async (email: string, password: string, captchaToken: string): Promise<AuthResponse> => {
+export const sendVerificationCode = async (email: string, purpose: 'login' | 'password_reset' = 'login'): Promise<void> => {
+  const response = await fetch(EMAIL_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'send_code',
+      email,
+      purpose,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Ошибка отправки кода');
+  }
+};
+
+export const login = async (email: string, password: string, verificationCode: string): Promise<AuthResponse> => {
   const response = await fetch(AUTH_API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -21,7 +39,7 @@ export const login = async (email: string, password: string, captchaToken: strin
       action: 'login',
       email,
       password,
-      captcha_token: captchaToken,
+      verification_code: verificationCode,
     }),
   });
 

@@ -1,6 +1,6 @@
 """
-Business: Аутентификация пользователей с проверкой капчи
-Args: event - HTTP запрос с методом POST/GET, body содержит email, password, captcha_token
+Business: Аутентификация пользователей с проверкой кода из Email
+Args: event - HTTP запрос с методом POST/GET, body содержит email, password, verification_code
       context - контекст выполнения с request_id
 Returns: HTTP ответ с токеном сессии или ошибкой
 """
@@ -12,26 +12,8 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 import psycopg2
 import psycopg2.extras
-import requests
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
-HCAPTCHA_SECRET_KEY = os.environ.get('HCAPTCHA_SECRET_KEY', '')
-
-def verify_captcha(captcha_token: str, ip_address: str) -> bool:
-    """Проверка hCaptcha токена"""
-    if not HCAPTCHA_SECRET_KEY:
-        return True
-    
-    try:
-        response = requests.post('https://hcaptcha.com/siteverify', data={
-            'secret': HCAPTCHA_SECRET_KEY,
-            'response': captcha_token,
-            'remoteip': ip_address
-        }, timeout=5)
-        result = response.json()
-        return result.get('success', False)
-    except Exception:
-        return False
 
 def hash_password(password: str) -> str:
     """Простое хеширование пароля (в продакшене использовать bcrypt)"""
@@ -100,24 +82,33 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             if action == 'login':
                 email = body_data.get('email', '').strip().lower()
                 password = body_data.get('password', '')
-                captcha_token = body_data.get('captcha_token', '')
+                verification_code = body_data.get('verification_code', '')
                 
-                if not email or not password:
+                if not email or not password or not verification_code:
                     return {
                         'statusCode': 400,
                         'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                        'body': json.dumps({'error': 'Email и пароль обязательны'})
-                    }
-                
-                if not verify_captcha(captcha_token, ip_address):
-                    return {
-                        'statusCode': 400,
-                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                        'body': json.dumps({'error': 'Проверка капчи не пройдена'})
+                        'body': json.dumps({'error': 'Email, пароль и код подтверждения обязательны'})
                     }
                 
                 conn = psycopg2.connect(DATABASE_URL)
                 cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+                
+                cur.execute(
+                    "SELECT id FROM verification_codes WHERE email = %s AND code = %s AND purpose = 'login' AND used = false AND expires_at > CURRENT_TIMESTAMP ORDER BY created_at DESC LIMIT 1",
+                    (email, verification_code)
+                )
+                verification = cur.fetchone()
+                
+                if not verification:
+                    log_activity(None, email, 'login_failed_invalid_code', ip_address, user_agent)
+                    cur.close()
+                    conn.close()
+                    return {
+                        'statusCode': 401,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'Неверный или истекший код подтверждения'})
+                    }
                 
                 cur.execute("SELECT id, email, password_hash, full_name, role, is_active FROM users WHERE email = %s", (email,))
                 user = cur.fetchone()
@@ -142,6 +133,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'body': json.dumps({'error': 'Неверный email или пароль'})
                     }
                 
+                cur.execute("UPDATE verification_codes SET used = true WHERE id = %s", (verification['id'],))
                 cur.execute("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = %s", (user['id'],))
                 conn.commit()
                 

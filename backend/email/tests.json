@@ -1,13 +1,12 @@
 {
   "tests": [
     {
-      "name": "Login without verification code",
+      "name": "Send code without email",
       "method": "POST",
       "path": "/",
       "body": {
-        "action": "login",
-        "email": "admin@example.com",
-        "password": "test"
+        "action": "send_code",
+        "purpose": "login"
       },
       "expectedStatus": 400,
       "expectedBody": {
@@ -16,14 +15,14 @@
       "bodyMatcher": "partial"
     },
     {
-      "name": "Verify invalid token",
+      "name": "Verify code without data",
       "method": "POST",
       "path": "/",
       "body": {
-        "action": "verify",
-        "token": "invalid_token_123"
+        "action": "verify_code",
+        "purpose": "login"
       },
-      "expectedStatus": 401,
+      "expectedStatus": 400,
       "expectedBody": {
         "error": "string"
       },
