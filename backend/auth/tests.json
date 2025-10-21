@@ -1,15 +1,15 @@
 {
   "tests": [
     {
-      "name": "Login without verification code",
+      "name": "Login with invalid credentials",
       "method": "POST",
       "path": "/",
       "body": {
         "action": "login",
-        "email": "admin@example.com",
-        "password": "test"
+        "email": "invalid@example.com",
+        "password": "wrongpassword"
       },
-      "expectedStatus": 400,
+      "expectedStatus": 401,
       "expectedBody": {
         "error": "string"
       },
