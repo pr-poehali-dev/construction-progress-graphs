@@ -1,185 +1,274 @@
-import { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import * as XLSX from 'xlsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Icon from '@/components/ui/icon';
+import { ProjectCard } from '@/components/dashboard/ProjectCard';
+import { ProjectStats } from '@/components/dashboard/ProjectStats';
+import { StageTimeline } from '@/components/dashboard/StageTimeline';
+import { ObjectTableRow } from '@/components/dashboard/ObjectTableRow';
+import { ObjectEditDialog } from '@/components/dashboard/ObjectEditDialog';
+import { mockProjects, KOAP_VIOLATIONS, Project, ProjectObject } from '@/components/dashboard/mockData';
 
-const Index = () => {
-  const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    message: ''
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export default function Index() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [projects] = useState<Project[]>(mockProjects);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [editingObject, setEditingObject] = useState<ProjectObject | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch('https://functions.poehali.dev/7d5abea6-d0fe-4ad7-a1ec-5f70ddc8f5f1', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: "Успешно отправлено!",
-          description: "Мы получили ваше сообщение и скоро свяжемся с вами.",
-        });
-        setFormData({ name: '', email: '', message: '' });
-      } else {
-        toast({
-          title: "Ошибка",
-          description: data.error || "Не удалось отправить сообщение",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Ошибка",
-        description: "Не удалось отправить сообщение",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
     }
+  }, [user, navigate]);
+
+  const handleExportToExcel = (obj: ProjectObject) => {
+    const exportData = [{
+      'Название': obj.name,
+      'Регион': obj.region,
+      'Район': obj.district,
+      'Местоположение': obj.location,
+      'Координаты': obj.coordinates,
+      'Обследование': obj.inspection ? 'Да' : 'Нет',
+      'Разрешение на установку опор': obj.poleInstallationPermit ? 'Да' : 'Нет',
+      'Разрешение на подключение к сети': obj.powerConnectionPermit ? 'Да' : 'Нет',
+      'Другие разрешения': obj.otherPermits,
+      'Номер оборудования': obj.equipmentNumber,
+      'Количество': obj.quantity,
+      'Сертификат поверки': obj.verificationCertificate ? 'Да' : 'Нет',
+      'Исполнительная документация': obj.executiveDocumentation ? 'Да' : 'Нет',
+      'Строительные работы': obj.constructionWork ? 'Да' : 'Нет',
+      'Пуско-наладочные работы': obj.commissioningWork ? 'Да' : 'Нет',
+      'Обустройство движения': obj.trafficArrangement ? 'Да' : 'Нет',
+      'Загрузка в сеть': obj.webUpload ? 'Да' : 'Нет',
+      'Фиксация нарушений': obj.violationRecording ? 'Да' : 'Нет',
+      'Типы нарушений': obj.violationTypes.join(', '),
+      'Ссылка на документацию': obj.documentationUrl,
+      'Статус работ': obj.workStatus,
+      'Примечания': obj.notes,
+      'Ссылка на мессенджер': obj.messengerLink,
+    }];
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Объект');
+    XLSX.writeFile(wb, `${obj.name.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`);
   };
+
+  const handleEditObject = (obj: ProjectObject) => {
+    setEditingObject(obj);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveObject = (updatedObj: ProjectObject) => {
+    console.log('Сохранение объекта:', updatedObj);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <header className="container mx-auto px-4 py-6">
-        <nav className="flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <Icon name="Rocket" className="text-blue-600" size={32} />
-            <span className="text-2xl font-bold text-gray-800">ТехСервис</span>
+      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary rounded-lg">
+                <Icon name="building" className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Управление проектами
+                </h1>
+                <p className="text-sm text-muted-foreground">Дорожная инфраструктура РФ</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <p className="text-sm font-medium">{user.name}</p>
+                <p className="text-xs text-muted-foreground">{user.email}</p>
+              </div>
+              <Button variant="outline" onClick={handleLogout}>
+                <Icon name="log-out" className="h-4 w-4 mr-2" />
+                Выход
+              </Button>
+            </div>
           </div>
-          <div className="hidden md:flex space-x-6">
-            <a href="#services" className="text-gray-600 hover:text-blue-600 transition">Услуги</a>
-            <a href="#about" className="text-gray-600 hover:text-blue-600 transition">О нас</a>
-            <a href="#contact" className="text-gray-600 hover:text-blue-600 transition">Контакты</a>
-          </div>
-        </nav>
+        </div>
       </header>
 
-      <main className="container mx-auto px-4 py-16">
-        <section className="text-center mb-20">
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-            Профессиональный ремонт техники
-          </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Быстро, качественно и с гарантией. Ремонтируем смартфоны, ноутбуки, планшеты и другую технику.
-          </p>
-          <a href="#contact">
-            <Button size="lg" className="text-lg px-8 py-6">
-              Оставить заявку
-            </Button>
-          </a>
-        </section>
+      <main className="container mx-auto px-4 py-8">
+        {!selectedProject ? (
+          <div>
+            <ProjectStats projects={projects} />
 
-        <section id="services" className="mb-20">
-          <h2 className="text-3xl font-bold text-center mb-12 text-gray-800">Наши услуги</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition">
-              <div className="mb-4">
-                <Icon name="Smartphone" className="text-blue-600" size={48} />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Ремонт смартфонов</h3>
-              <p className="text-gray-600">Замена экранов, батарей, камер и других компонентов</p>
-            </div>
-            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition">
-              <div className="mb-4">
-                <Icon name="Laptop" className="text-blue-600" size={48} />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Ремонт ноутбуков</h3>
-              <p className="text-gray-600">Чистка, замена комплектующих, установка ПО</p>
-            </div>
-            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition">
-              <div className="mb-4">
-                <Icon name="Tablet" className="text-blue-600" size={48} />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Ремонт планшетов</h3>
-              <p className="text-gray-600">Устранение любых неисправностей планшетов</p>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {projects.map((project) => (
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  onSelect={setSelectedProject}
+                />
+              ))}
             </div>
           </div>
-        </section>
-
-        <section id="about" className="mb-20 bg-white p-12 rounded-xl shadow-lg">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-6 text-gray-800">Почему выбирают нас</h2>
-            <div className="grid md:grid-cols-3 gap-8">
-              <div>
-                <div className="text-4xl font-bold text-blue-600 mb-2">5+</div>
-                <p className="text-gray-600">лет опыта</p>
-              </div>
-              <div>
-                <div className="text-4xl font-bold text-blue-600 mb-2">1000+</div>
-                <p className="text-gray-600">довольных клиентов</p>
-              </div>
-              <div>
-                <div className="text-4xl font-bold text-blue-600 mb-2">90%</div>
-                <p className="text-gray-600">ремонтов за 1 день</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="contact" className="max-w-2xl mx-auto">
-          <div className="bg-white p-8 rounded-xl shadow-lg">
-            <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">Оставьте заявку</h2>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium mb-2">Ваше имя</label>
-                <Input
-                  type="text"
-                  placeholder="Введите ваше имя"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Email</label>
-                <Input
-                  type="email"
-                  placeholder="your@email.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Сообщение</label>
-                <Textarea
-                  placeholder="Опишите проблему с вашим устройством"
-                  value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  required
-                  rows={4}
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? 'Отправка...' : 'Отправить заявку'}
+        ) : (
+          <div>
+            <div className="mb-6">
+              <Button variant="ghost" onClick={() => setSelectedProject(null)}>
+                <Icon name="arrow-left" className="h-4 w-4 mr-2" />
+                Назад к проектам
               </Button>
-            </form>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-3 mb-6">
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Icon name="folder" className="h-5 w-5 text-primary" />
+                    </div>
+                    {selectedProject.name}
+                  </CardTitle>
+                  <CardDescription>
+                    {new Date(selectedProject.startDate).toLocaleDateString('ru-RU')} - {new Date(selectedProject.endDate).toLocaleDateString('ru-RU')}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Бюджет</p>
+                      <p className="text-2xl font-bold">{(selectedProject.budget / 1000000).toFixed(1)} млн ₽</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Использовано</p>
+                      <p className="text-2xl font-bold">{(selectedProject.spent / 1000000).toFixed(1)} млн ₽</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Прогресс</p>
+                      <p className="text-2xl font-bold">{selectedProject.progress}%</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Объектов</p>
+                      <p className="text-2xl font-bold">{selectedProject.objects.length}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Этапы проекта</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <StageTimeline stages={selectedProject.stages} />
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Объекты проекта</CardTitle>
+                <CardDescription>Подробная информация о {selectedProject.objects.length} объектах</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="table" className="w-full">
+                  <TabsList>
+                    <TabsTrigger value="table">
+                      <Icon name="table" className="h-4 w-4 mr-2" />
+                      Таблица
+                    </TabsTrigger>
+                    <TabsTrigger value="grid">
+                      <Icon name="grid" className="h-4 w-4 mr-2" />
+                      Карточки
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="table" className="mt-4">
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Название</TableHead>
+                            <TableHead>Регион/Район</TableHead>
+                            <TableHead>Статус</TableHead>
+                            <TableHead>Прогресс</TableHead>
+                            <TableHead className="text-right">Действия</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {selectedProject.objects.map((obj) => (
+                            <ObjectTableRow
+                              key={obj.id}
+                              object={obj}
+                              onEdit={handleEditObject}
+                              onExport={handleExportToExcel}
+                            />
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="grid" className="mt-4">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {selectedProject.objects.map((obj) => (
+                        <Card key={obj.id} className="hover:shadow-lg transition-shadow">
+                          <CardHeader>
+                            <CardTitle className="text-lg">{obj.name}</CardTitle>
+                            <CardDescription>{obj.region}, {obj.district}</CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Статус:</span>
+                                <span className="font-medium">{obj.workStatus}</span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Координаты:</span>
+                                <span className="font-medium">{obj.coordinates}</span>
+                              </div>
+                              <div className="flex gap-2 mt-4">
+                                <Button size="sm" variant="outline" onClick={() => handleEditObject(obj)} className="flex-1">
+                                  <Icon name="pencil" className="h-4 w-4 mr-1" />
+                                  Редактировать
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => handleExportToExcel(obj)}>
+                                  <Icon name="download" className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
           </div>
-        </section>
+        )}
       </main>
 
-      <footer className="bg-gray-900 text-white py-8 mt-20">
-        <div className="container mx-auto px-4 text-center">
-          <p>&copy; 2024 ТехСервис. Все права защищены.</p>
-        </div>
-      </footer>
+      <ObjectEditDialog
+        object={editingObject}
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        onSave={handleSaveObject}
+        violationTypes={KOAP_VIOLATIONS}
+      />
     </div>
   );
-};
-
-export default Index;
+}
