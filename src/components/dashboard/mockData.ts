@@ -42,7 +42,7 @@ export interface Stage {
 export interface Project {
   id: string;
   name: string;
-  type: 'road' | 'bridge' | 'utility';
+  type: 'road' | 'bridge' | 'utility' | 'traffic-enforcement';
   progress: number;
   budget: number;
   spent: number;

@@ -52,7 +52,7 @@ interface ProjectObject {
 interface Project {
   id: string;
   name: string;
-  type: 'road' | 'bridge' | 'utility';
+  type: 'road' | 'bridge' | 'utility' | 'traffic-enforcement';
   progress: number;
   budget: number;
   spent: number;
@@ -362,6 +362,8 @@ const Index = () => {
         return 'Bridge';
       case 'utility':
         return 'Droplet';
+      case 'traffic-enforcement':
+        return 'Camera';
       default:
         return 'Building2';
     }
@@ -1043,7 +1045,7 @@ const Index = () => {
                       <Label htmlFor="type">Тип проекта</Label>
                       <Select
                         value={newProject.type}
-                        onValueChange={(value) => setNewProject({ ...newProject, type: value as 'road' | 'bridge' | 'utility' })}
+                        onValueChange={(value) => setNewProject({ ...newProject, type: value as 'road' | 'bridge' | 'utility' | 'traffic-enforcement' })}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Выберите тип" />
@@ -1052,6 +1054,7 @@ const Index = () => {
                           <SelectItem value="road">Дорога</SelectItem>
                           <SelectItem value="bridge">Мост</SelectItem>
                           <SelectItem value="utility">Коммуникации</SelectItem>
+                          <SelectItem value="traffic-enforcement">Системы фото-видеофиксации нарушений ПДД</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1188,6 +1191,7 @@ const Index = () => {
                               {project.type === 'road' && 'Дорога'}
                               {project.type === 'bridge' && 'Мост'}
                               {project.type === 'utility' && 'Коммуникации'}
+                              {project.type === 'traffic-enforcement' && 'Системы фото-видеофиксации'}
                             </Badge>
                           </div>
                         </div>
