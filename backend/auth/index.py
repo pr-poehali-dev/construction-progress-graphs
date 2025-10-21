@@ -95,6 +95,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 email = body_data.get('email', '').strip().lower()
                 password = body_data.get('password', '')
                 
+                print(f"DEBUG: Login attempt - email: {email}, password length: {len(password)}")
+                
                 if not email or not password:
                     return {
                         'statusCode': 400,
@@ -111,6 +113,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 cur.execute(query)
                 user = cur.fetchone()
                 
+                print(f"DEBUG: User found: {user is not None}, Active: {user['is_active'] if user else 'N/A'}")
+                
                 if not user or not user['is_active']:
                     log_activity(None, email, 'login_failed', ip_address, user_agent)
                     cur.close()
@@ -122,7 +126,13 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'isBase64Encoded': False
                     }
                 
-                if not verify_password(password, user['password_hash']):
+                password_hash_calculated = hash_password(password)
+                password_match = verify_password(password, user['password_hash'])
+                print(f"DEBUG: Password hash calculated: {password_hash_calculated}")
+                print(f"DEBUG: Password hash in DB: {user['password_hash']}")
+                print(f"DEBUG: Password match: {password_match}")
+                
+                if not password_match:
                     log_activity(user['id'], email, 'login_failed', ip_address, user_agent)
                     cur.close()
                     conn.close()
