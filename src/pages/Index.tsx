@@ -257,7 +257,10 @@ const KOAP_VIOLATIONS = [
 ];
 
 const Index = () => {
-  const [projects, setProjects] = useState<Project[]>(mockProjects);
+  const [projects, setProjects] = useState<Project[]>(() => {
+    const saved = localStorage.getItem('construction-projects');
+    return saved ? JSON.parse(saved) : mockProjects;
+  });
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isObjectDialogOpen, setIsObjectDialogOpen] = useState(false);
@@ -315,6 +318,23 @@ const Index = () => {
   });
   const [selectedStageFilter, setSelectedStageFilter] = useState<string>('all');
   const [deliveryStageFilter, setDeliveryStageFilter] = useState<string>('all');
+
+  useEffect(() => {
+    localStorage.setItem('construction-projects', JSON.stringify(projects));
+    window.dispatchEvent(new Event('storage'));
+  }, [projects]);
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const saved = localStorage.getItem('construction-projects');
+      if (saved) {
+        setProjects(JSON.parse(saved));
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
