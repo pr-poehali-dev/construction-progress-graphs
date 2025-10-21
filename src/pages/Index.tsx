@@ -1,18 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Textarea } from '@/components/ui/textarea';
+import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Icon from '@/components/ui/icon';
+import { ProjectCard } from '@/components/dashboard/ProjectCard';
+import { ProjectStats } from '@/components/dashboard/ProjectStats';
+import { StageTimeline } from '@/components/dashboard/StageTimeline';
+import { ObjectTableRow } from '@/components/dashboard/ObjectTableRow';
+import { ObjectEditDialog } from '@/components/dashboard/ObjectEditDialog';
+import { mockProjects, KOAP_VIOLATIONS, Project, ProjectObject } from '@/components/dashboard/mockData';
 
 interface ProjectObject {
   id: string;
@@ -646,6 +644,9 @@ const Index = () => {
       'Типы нарушений КоАП': obj.violationTypes?.join(', ') || '-',
       'Ссылка на документацию': obj.documentationUrl || '-',
       'Статус работ': getWorkStatusText(obj.workStatus || 'not-started'),
+      'Оператор связи': obj.operator || '-',
+      'Тип связи': obj.connectionType || '-',
+      'Стоимость тарифа (₽/мес)': obj.tariffCost || 0,
       'Примечание': obj.notes || '-',
       'Ссылка на мессенджер': obj.messengerLink || '-',
     }));

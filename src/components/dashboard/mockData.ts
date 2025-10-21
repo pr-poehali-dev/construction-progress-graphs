@@ -25,6 +25,9 @@ export interface ProjectObject {
   messengerLink: string;
   stageId?: string;
   deliveryStage?: '1' | '2' | '3' | '4' | '5';
+  operator: 'МТС' | 'Мегафон' | 'Билайн' | 'Ростелеком' | 'Другой';
+  connectionType: 'GSM' | 'Оптический канал' | 'WI-FI' | 'Другое';
+  tariffCost: number;
 }
 
 export interface Stage {
@@ -105,6 +108,9 @@ export const mockProjects: Project[] = [
         workStatus: 'in-progress',
         notes: 'Ожидается подключение к сети',
         messengerLink: 'https://t.me/road_manager',
+        operator: 'МТС',
+        connectionType: 'GSM',
+        tariffCost: 1200,
       },
       {
         id: '1-2',
@@ -131,6 +137,9 @@ export const mockProjects: Project[] = [
         workStatus: 'not-started',
         notes: 'Требуется согласование ТУ',
         messengerLink: '',
+        operator: 'Мегафон',
+        connectionType: 'Оптический канал',
+        tariffCost: 3500,
       },
     ],
   },
@@ -176,6 +185,9 @@ export const mockProjects: Project[] = [
         workStatus: 'completed',
         notes: 'Готово к эксплуатации',
         messengerLink: 'https://wa.me/79001234567',
+        operator: 'Ростелеком',
+        connectionType: 'Оптический канал',
+        tariffCost: 5000,
       },
     ],
   },
@@ -221,6 +233,9 @@ export const mockProjects: Project[] = [
         workStatus: 'in-progress',
         notes: 'На стадии испытаний',
         messengerLink: '',
+        operator: 'Билайн',
+        connectionType: 'WI-FI',
+        tariffCost: 2000,
       },
     ],
   },
