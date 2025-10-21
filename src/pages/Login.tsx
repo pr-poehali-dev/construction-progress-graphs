@@ -103,7 +103,7 @@ export default function Login() {
 
           <div className="mt-6 text-center text-sm text-muted-foreground border-t pt-4">
             <p>Демо аккаунт:</p>
-            <p className="font-mono text-xs mt-1">karkavanidi@gmail.ru / 6421_aBa</p>
+            <p className="font-mono text-xs mt-1">karkavanidi@gmail.ru / Admin123!</p>
           </div>
         </CardContent>
       </Card>
