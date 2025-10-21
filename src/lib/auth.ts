@@ -31,7 +31,7 @@ export const sendVerificationCode = async (email: string, purpose: 'login' | 'pa
   }
 };
 
-export const login = async (email: string, password: string, verificationCode: string): Promise<AuthResponse> => {
+export const login = async (email: string, password: string): Promise<AuthResponse> => {
   const response = await fetch(AUTH_API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -39,7 +39,6 @@ export const login = async (email: string, password: string, verificationCode: s
       action: 'login',
       email,
       password,
-      verification_code: verificationCode,
     }),
   });
 

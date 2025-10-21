@@ -28,7 +28,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await loginApi(email, password, '');
+      const response = await loginApi(email, password);
       login(response.token, response.user);
       navigate('/');
     } catch (err) {
