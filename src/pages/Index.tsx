@@ -1917,6 +1917,9 @@ const Index = () => {
                                           </a>
                                         ) : '-'}
                                       </TableCell>
+                                      <TableCell className="text-xs">{obj.operator || '-'}</TableCell>
+                                      <TableCell className="text-xs">{obj.connectionType || '-'}</TableCell>
+                                      <TableCell className="text-xs">{obj.tariffCost ? `${obj.tariffCost.toLocaleString('ru-RU')} ₽` : '-'}</TableCell>
                                       <TableCell>
                                         <div className="flex gap-1">
                                           <Button
