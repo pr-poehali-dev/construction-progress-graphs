@@ -196,6 +196,55 @@ export function ObjectEditDialog({ object, stages, violationOptions, isOpen, onC
             </div>
           </div>
 
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="operator">Оператор связи</Label>
+              <Select
+                value={editedObject.operator}
+                onValueChange={(value: any) => setEditedObject({ ...editedObject, operator: value })}
+              >
+                <SelectTrigger id="operator">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="МТС">МТС</SelectItem>
+                  <SelectItem value="Мегафон">Мегафон</SelectItem>
+                  <SelectItem value="Билайн">Билайн</SelectItem>
+                  <SelectItem value="Ростелеком">Ростелеком</SelectItem>
+                  <SelectItem value="Другой">Другой</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="connectionType">Тип связи</Label>
+              <Select
+                value={editedObject.connectionType}
+                onValueChange={(value: any) => setEditedObject({ ...editedObject, connectionType: value })}
+              >
+                <SelectTrigger id="connectionType">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="GSM">GSM</SelectItem>
+                  <SelectItem value="Оптический канал">Оптический канал</SelectItem>
+                  <SelectItem value="WI-FI">WI-FI</SelectItem>
+                  <SelectItem value="Другое">Другое</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="tariffCost">Стоимость тарифа (₽)</Label>
+              <Input
+                id="tariffCost"
+                type="number"
+                value={editedObject.tariffCost}
+                onChange={(e) => setEditedObject({ ...editedObject, tariffCost: parseFloat(e.target.value) || 0 })}
+              />
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label>Разрешительная документация</Label>
             <div className="grid grid-cols-2 gap-4">
