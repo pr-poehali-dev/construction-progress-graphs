@@ -261,11 +261,26 @@ const Index = () => {
     const saved = localStorage.getItem('construction-projects');
     return saved ? JSON.parse(saved) : mockProjects;
   });
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isObjectDialogOpen, setIsObjectDialogOpen] = useState(false);
-  const [editingObject, setEditingObject] = useState<ProjectObject | null>(null);
-  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(() => {
+    const saved = localStorage.getItem('ui-state-selectedProject');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [isDialogOpen, setIsDialogOpen] = useState(() => {
+    const saved = localStorage.getItem('ui-state-isDialogOpen');
+    return saved === 'true';
+  });
+  const [isObjectDialogOpen, setIsObjectDialogOpen] = useState(() => {
+    const saved = localStorage.getItem('ui-state-isObjectDialogOpen');
+    return saved === 'true';
+  });
+  const [editingObject, setEditingObject] = useState<ProjectObject | null>(() => {
+    const saved = localStorage.getItem('ui-state-editingObject');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(() => {
+    const saved = localStorage.getItem('ui-state-currentProjectId');
+    return saved || null;
+  });
   const [newProject, setNewProject] = useState<Partial<Project>>({
     name: '',
     type: 'road',
@@ -301,14 +316,38 @@ const Index = () => {
     connectionType: 'GSM',
     tariffCost: 0,
   });
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [selectedObjects, setSelectedObjects] = useState<Set<string>>(new Set());
-  const [isBulkStatusDialogOpen, setIsBulkStatusDialogOpen] = useState(false);
-  const [bulkStatus, setBulkStatus] = useState<'not-started' | 'in-progress' | 'paused' | 'completed'>('in-progress');
-  const [isBulkViolationsDialogOpen, setIsBulkViolationsDialogOpen] = useState(false);
-  const [bulkViolations, setBulkViolations] = useState<string[]>([]);
-  const [isStageDialogOpen, setIsStageDialogOpen] = useState(false);
-  const [editingStage, setEditingStage] = useState<Stage | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>(() => {
+    const saved = localStorage.getItem('ui-state-statusFilter');
+    return saved || 'all';
+  });
+  const [selectedObjects, setSelectedObjects] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem('ui-state-selectedObjects');
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
+  const [isBulkStatusDialogOpen, setIsBulkStatusDialogOpen] = useState(() => {
+    const saved = localStorage.getItem('ui-state-isBulkStatusDialogOpen');
+    return saved === 'true';
+  });
+  const [bulkStatus, setBulkStatus] = useState<'not-started' | 'in-progress' | 'paused' | 'completed'>(() => {
+    const saved = localStorage.getItem('ui-state-bulkStatus');
+    return (saved as any) || 'in-progress';
+  });
+  const [isBulkViolationsDialogOpen, setIsBulkViolationsDialogOpen] = useState(() => {
+    const saved = localStorage.getItem('ui-state-isBulkViolationsDialogOpen');
+    return saved === 'true';
+  });
+  const [bulkViolations, setBulkViolations] = useState<string[]>(() => {
+    const saved = localStorage.getItem('ui-state-bulkViolations');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [isStageDialogOpen, setIsStageDialogOpen] = useState(() => {
+    const saved = localStorage.getItem('ui-state-isStageDialogOpen');
+    return saved === 'true';
+  });
+  const [editingStage, setEditingStage] = useState<Stage | null>(() => {
+    const saved = localStorage.getItem('ui-state-editingStage');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [newStage, setNewStage] = useState<Partial<Stage>>({
     name: '',
     progress: 0,
@@ -316,13 +355,79 @@ const Index = () => {
     endDate: '',
     status: 'pending',
   });
-  const [selectedStageFilter, setSelectedStageFilter] = useState<string>('all');
-  const [deliveryStageFilter, setDeliveryStageFilter] = useState<string>('all');
+  const [selectedStageFilter, setSelectedStageFilter] = useState<string>(() => {
+    const saved = localStorage.getItem('ui-state-selectedStageFilter');
+    return saved || 'all';
+  });
+  const [deliveryStageFilter, setDeliveryStageFilter] = useState<string>(() => {
+    const saved = localStorage.getItem('ui-state-deliveryStageFilter');
+    return saved || 'all';
+  });
 
   useEffect(() => {
     localStorage.setItem('construction-projects', JSON.stringify(projects));
     window.dispatchEvent(new Event('storage'));
   }, [projects]);
+
+  useEffect(() => {
+    localStorage.setItem('ui-state-selectedProject', JSON.stringify(selectedProject));
+  }, [selectedProject]);
+
+  useEffect(() => {
+    localStorage.setItem('ui-state-isDialogOpen', String(isDialogOpen));
+  }, [isDialogOpen]);
+
+  useEffect(() => {
+    localStorage.setItem('ui-state-isObjectDialogOpen', String(isObjectDialogOpen));
+  }, [isObjectDialogOpen]);
+
+  useEffect(() => {
+    localStorage.setItem('ui-state-editingObject', JSON.stringify(editingObject));
+  }, [editingObject]);
+
+  useEffect(() => {
+    localStorage.setItem('ui-state-currentProjectId', currentProjectId || '');
+  }, [currentProjectId]);
+
+  useEffect(() => {
+    localStorage.setItem('ui-state-statusFilter', statusFilter);
+  }, [statusFilter]);
+
+  useEffect(() => {
+    localStorage.setItem('ui-state-selectedObjects', JSON.stringify(Array.from(selectedObjects)));
+  }, [selectedObjects]);
+
+  useEffect(() => {
+    localStorage.setItem('ui-state-isBulkStatusDialogOpen', String(isBulkStatusDialogOpen));
+  }, [isBulkStatusDialogOpen]);
+
+  useEffect(() => {
+    localStorage.setItem('ui-state-bulkStatus', bulkStatus);
+  }, [bulkStatus]);
+
+  useEffect(() => {
+    localStorage.setItem('ui-state-isBulkViolationsDialogOpen', String(isBulkViolationsDialogOpen));
+  }, [isBulkViolationsDialogOpen]);
+
+  useEffect(() => {
+    localStorage.setItem('ui-state-bulkViolations', JSON.stringify(bulkViolations));
+  }, [bulkViolations]);
+
+  useEffect(() => {
+    localStorage.setItem('ui-state-isStageDialogOpen', String(isStageDialogOpen));
+  }, [isStageDialogOpen]);
+
+  useEffect(() => {
+    localStorage.setItem('ui-state-editingStage', JSON.stringify(editingStage));
+  }, [editingStage]);
+
+  useEffect(() => {
+    localStorage.setItem('ui-state-selectedStageFilter', selectedStageFilter);
+  }, [selectedStageFilter]);
+
+  useEffect(() => {
+    localStorage.setItem('ui-state-deliveryStageFilter', deliveryStageFilter);
+  }, [deliveryStageFilter]);
 
   useEffect(() => {
     const handleStorageChange = () => {
