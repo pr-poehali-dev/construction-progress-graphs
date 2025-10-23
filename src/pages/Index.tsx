@@ -18,6 +18,8 @@ import { ProjectStats } from '@/components/dashboard/ProjectStats';
 import { StageTimeline } from '@/components/dashboard/StageTimeline';
 import { ObjectTableRow } from '@/components/dashboard/ObjectTableRow';
 import { ObjectEditDialog } from '@/components/dashboard/ObjectEditDialog';
+import { ColumnSettings, ColumnConfig } from '@/components/dashboard/ColumnSettings';
+import { DynamicObjectsTable } from '@/components/dashboard/DynamicObjectsTable';
 import { mockProjects, KOAP_VIOLATIONS, Project, ProjectObject } from '@/components/dashboard/mockData';
 
 interface ProjectObject {
@@ -363,6 +365,44 @@ const Index = () => {
     const saved = localStorage.getItem('ui-state-deliveryStageFilter');
     return saved || 'all';
   });
+  const [isColumnSettingsOpen, setIsColumnSettingsOpen] = useState(false);
+  const [columnConfig, setColumnConfig] = useState<ColumnConfig[]>(() => {
+    const saved = localStorage.getItem('ui-state-columnConfig');
+    if (saved) return JSON.parse(saved);
+    
+    return [
+      { id: 'checkbox', label: 'Выбор', visible: true, order: 0 },
+      { id: 'name', label: 'Объект', visible: true, order: 1 },
+      { id: 'stage', label: 'Этап', visible: true, order: 2 },
+      { id: 'deliveryStage', label: 'Этап сдачи', visible: true, order: 3 },
+      { id: 'region', label: 'Регион', visible: true, order: 4 },
+      { id: 'district', label: 'Район', visible: true, order: 5 },
+      { id: 'location', label: 'Локация', visible: true, order: 6 },
+      { id: 'coordinates', label: 'Координаты', visible: true, order: 7 },
+      { id: 'inspection', label: 'Обследование', visible: true, order: 8 },
+      { id: 'poleInstallationPermit', label: 'ТУ на установку опор', visible: true, order: 9 },
+      { id: 'powerConnectionPermit', label: 'ТУ на электропитание', visible: true, order: 10 },
+      { id: 'otherPermits', label: 'Другие разрешения', visible: true, order: 11 },
+      { id: 'equipmentNumber', label: 'Номер оборудования', visible: true, order: 12 },
+      { id: 'quantity', label: 'Количество', visible: true, order: 13 },
+      { id: 'verificationCertificate', label: 'Свидетельство о поверке', visible: true, order: 14 },
+      { id: 'executiveDocumentation', label: 'Исполнительная документация', visible: true, order: 15 },
+      { id: 'constructionWork', label: 'Строительно-монтаж работы', visible: true, order: 16 },
+      { id: 'commissioningWork', label: 'Пусконаладочные работы', visible: true, order: 17 },
+      { id: 'trafficArrangement', label: 'Организация ДД', visible: true, order: 18 },
+      { id: 'operator', label: 'Оператор связи', visible: true, order: 19 },
+      { id: 'connectionType', label: 'Тип связи', visible: true, order: 20 },
+      { id: 'tariffCost', label: 'Стоимость тарифа', visible: true, order: 21 },
+      { id: 'webUpload', label: 'Выгрузка в Паутину', visible: true, order: 22 },
+      { id: 'violationRecording', label: 'Фиксация нарушений', visible: true, order: 23 },
+      { id: 'violationTypes', label: 'Типы нарушений', visible: true, order: 24 },
+      { id: 'documentationUrl', label: 'Ссылка на документацию', visible: true, order: 25 },
+      { id: 'workStatus', label: 'Статус работ', visible: true, order: 26 },
+      { id: 'notes', label: 'Примечание', visible: true, order: 27 },
+      { id: 'messengerLink', label: 'Мессенджер', visible: true, order: 28 },
+      { id: 'actions', label: 'Действия', visible: true, order: 29 },
+    ];
+  });
 
   useEffect(() => {
     localStorage.setItem('construction-projects', JSON.stringify(projects));
@@ -396,6 +436,10 @@ const Index = () => {
   useEffect(() => {
     localStorage.setItem('ui-state-selectedObjects', JSON.stringify(Array.from(selectedObjects)));
   }, [selectedObjects]);
+
+  useEffect(() => {
+    localStorage.setItem('ui-state-columnConfig', JSON.stringify(columnConfig));
+  }, [columnConfig]);
 
   useEffect(() => {
     localStorage.setItem('ui-state-isBulkStatusDialogOpen', String(isBulkStatusDialogOpen));
@@ -1103,6 +1147,17 @@ const Index = () => {
     return objects.filter(obj => obj.stageId === stageId);
   };
 
+  const getVisibleColumns = () => {
+    return columnConfig
+      .filter(col => col.visible)
+      .sort((a, b) => a.order - b.order);
+  };
+
+  const isColumnVisible = (columnId: string) => {
+    const col = columnConfig.find(c => c.id === columnId);
+    return col ? col.visible : true;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
@@ -1570,6 +1625,15 @@ const Index = () => {
                               <Button
                                 size="sm"
                                 variant="outline"
+                                onClick={() => setIsColumnSettingsOpen(true)}
+                                className="gap-2"
+                              >
+                                <Icon name="Settings2" size={14} />
+                                Колонки
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
                                 onClick={() => exportToExcel(project.id)}
                                 className="gap-2"
                                 disabled={!project.objects || project.objects.length === 0}
@@ -1664,211 +1728,18 @@ const Index = () => {
                           {project.objects && project.objects.length > 0 && (
                             <>
                               {filterObjects(project.objects).length > 0 ? (
-                                <div className="overflow-x-auto rounded-lg border border-border">
-                              <Table>
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead className="w-[50px]">
-                                      <Checkbox
-                                        checked={filterObjects(project.objects).length > 0 && filterObjects(project.objects).every(obj => selectedObjects.has(obj.id))}
-                                        onCheckedChange={() => handleSelectAll(project.id)}
-                                      />
-                                    </TableHead>
-                                    <TableHead className="min-w-[150px]">Объект</TableHead>
-                                    <TableHead className="min-w-[150px]">Этап</TableHead>
-                                    <TableHead className="min-w-[120px]">Этап сдачи</TableHead>
-                                    <TableHead className="min-w-[120px]">Регион</TableHead>
-                                    <TableHead className="min-w-[120px]">Район</TableHead>
-                                    <TableHead className="min-w-[150px]">Локация</TableHead>
-                                    <TableHead className="min-w-[140px]">Координаты</TableHead>
-                                    <TableHead className="min-w-[110px]">Обследование</TableHead>
-                                    <TableHead className="min-w-[150px]">ТУ на установку опор</TableHead>
-                                    <TableHead className="min-w-[180px]">ТУ на подключение к электропитанию</TableHead>
-                                    <TableHead className="min-w-[140px]">Другие разрешения</TableHead>
-                                    <TableHead className="min-w-[150px]">Номер оборудования</TableHead>
-                                    <TableHead className="min-w-[100px]">Количество</TableHead>
-                                    <TableHead className="min-w-[160px]">Свидетельство о поверке</TableHead>
-                                    <TableHead className="min-w-[180px]">Исполнительная документация</TableHead>
-                                    <TableHead className="min-w-[180px]">Строительно-монтажные работы</TableHead>
-                                    <TableHead className="min-w-[180px]">Пуско-наладочные работы</TableHead>
-                                    <TableHead className="min-w-[90px]">ПОДД</TableHead>
-                                    <TableHead className="min-w-[140px]">Выгрузка в Паутину</TableHead>
-                                    <TableHead className="min-w-[140px]">Фиксация нарушений</TableHead>
-                                    <TableHead className="min-w-[180px]">Типы нарушений КоАП</TableHead>
-                                    <TableHead className="min-w-[250px]">Ссылка на документацию</TableHead>
-                                    <TableHead className="min-w-[150px]">Статус работ</TableHead>
-                                    <TableHead className="min-w-[200px]">Примечание</TableHead>
-                                    <TableHead className="min-w-[200px]">Мессенджер</TableHead>
-                                    <TableHead className="min-w-[140px]">Оператор связи</TableHead>
-                                    <TableHead className="min-w-[160px]">Тип связи</TableHead>
-                                    <TableHead className="min-w-[140px]">Стоимость тарифа</TableHead>
-                                    <TableHead className="w-[100px]">Действия</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {filterObjects(project.objects).map((obj) => (
-                                    <TableRow key={obj.id} className={selectedObjects.has(obj.id) ? 'bg-primary/5' : ''}>
-                                      <TableCell>
-                                        <Checkbox
-                                          checked={selectedObjects.has(obj.id)}
-                                          onCheckedChange={() => handleToggleObject(obj.id)}
-                                        />
-                                      </TableCell>
-                                      <TableCell className="font-medium">{obj.name}</TableCell>
-                                      <TableCell>
-                                        {obj.stageId ? (
-                                          <Badge variant="outline" className="text-xs">
-                                            {project.stages.find(s => s.id === obj.stageId)?.name || 'Этап удален'}
-                                          </Badge>
-                                        ) : (
-                                          <span className="text-xs text-muted-foreground">-</span>
-                                        )}
-                                      </TableCell>
-                                      <TableCell>
-                                        <Badge 
-                                          variant={obj.deliveryStage ? 'default' : 'secondary'}
-                                          className="text-xs cursor-pointer hover:opacity-80 transition-opacity"
-                                          onClick={() => {
-                                            const stages: Array<'1' | '2' | '3' | '4' | '5' | undefined> = ['1', '2', '3', '4', '5', undefined];
-                                            const currentIndex = obj.deliveryStage ? stages.indexOf(obj.deliveryStage) : -1;
-                                            const nextStage = stages[(currentIndex + 1) % stages.length];
-                                            
-                                            setProjects(projects.map(p => 
-                                              p.id === project.id 
-                                                ? {
-                                                    ...p,
-                                                    objects: p.objects.map(o => 
-                                                      o.id === obj.id 
-                                                        ? { ...o, deliveryStage: nextStage }
-                                                        : o
-                                                    )
-                                                  }
-                                                : p
-                                            ));
-                                          }}
-                                        >
-                                          {obj.deliveryStage ? `${obj.deliveryStage} этап` : '-'}
-                                        </Badge>
-                                      </TableCell>
-                                      <TableCell>{obj.region}</TableCell>
-                                      <TableCell>{obj.district}</TableCell>
-                                      <TableCell>{obj.location}</TableCell>
-                                      <TableCell className="font-mono text-xs">{obj.coordinates}</TableCell>
-                                      <TableCell>
-                                        <Badge 
-                                          variant={obj.inspection ? 'default' : 'secondary'} 
-                                          className="text-xs cursor-pointer hover:opacity-80 transition-opacity"
-                                          onClick={() => {
-                                            setProjects(projects.map(p => 
-                                              p.id === project.id 
-                                                ? {
-                                                    ...p,
-                                                    objects: p.objects.map(o => 
-                                                      o.id === obj.id 
-                                                        ? { ...o, inspection: !o.inspection }
-                                                        : o
-                                                    )
-                                                  }
-                                                : p
-                                            ));
-                                          }}
-                                        >
-                                          {obj.inspection ? 'Выполнено' : 'Не выполнено'}
-                                        </Badge>
-                                      </TableCell>
-                                      <TableCell>
-                                        <Badge 
-                                          variant={obj.poleInstallationPermit ? 'default' : 'secondary'} 
-                                          className="text-xs cursor-pointer hover:opacity-80 transition-opacity"
-                                          onClick={() => {
-                                            setProjects(projects.map(p => 
-                                              p.id === project.id 
-                                                ? {
-                                                    ...p,
-                                                    objects: p.objects.map(o => 
-                                                      o.id === obj.id 
-                                                        ? { ...o, poleInstallationPermit: !o.poleInstallationPermit }
-                                                        : o
-                                                    )
-                                                  }
-                                                : p
-                                            ));
-                                          }}
-                                        >
-                                          {obj.poleInstallationPermit ? 'Получено' : 'Не получено'}
-                                        </Badge>
-                                      </TableCell>
-                                      <TableCell>
-                                        <Badge 
-                                          variant={obj.powerConnectionPermit ? 'default' : 'secondary'} 
-                                          className="text-xs cursor-pointer hover:opacity-80 transition-opacity"
-                                          onClick={() => {
-                                            setProjects(projects.map(p => 
-                                              p.id === project.id 
-                                                ? {
-                                                    ...p,
-                                                    objects: p.objects.map(o => 
-                                                      o.id === obj.id 
-                                                        ? { ...o, powerConnectionPermit: !o.powerConnectionPermit }
-                                                        : o
-                                                    )
-                                                  }
-                                                : p
-                                            ));
-                                          }}
-                                        >
-                                          {obj.powerConnectionPermit ? 'Получено' : 'Не получено'}
-                                        </Badge>
-                                      </TableCell>
-                                      <TableCell className="text-xs">{obj.otherPermits || '-'}</TableCell>
-                                      <TableCell className="font-mono text-xs">{obj.equipmentNumber}</TableCell>
-                                      <TableCell>{obj.quantity}</TableCell>
-                                      <TableCell>
-                                        <Badge 
-                                          variant={obj.verificationCertificate ? 'default' : 'secondary'} 
-                                          className="text-xs cursor-pointer hover:opacity-80 transition-opacity"
-                                          onClick={() => {
-                                            setProjects(projects.map(p => 
-                                              p.id === project.id 
-                                                ? {
-                                                    ...p,
-                                                    objects: p.objects.map(o => 
-                                                      o.id === obj.id 
-                                                        ? { ...o, verificationCertificate: !o.verificationCertificate }
-                                                        : o
-                                                    )
-                                                  }
-                                                : p
-                                            ));
-                                          }}
-                                        >
-                                          {obj.verificationCertificate ? 'Есть' : 'Нет'}
-                                        </Badge>
-                                      </TableCell>
-                                      <TableCell>
-                                        <Badge 
-                                          variant={obj.executiveDocumentation ? 'default' : 'secondary'} 
-                                          className="text-xs cursor-pointer hover:opacity-80 transition-opacity"
-                                          onClick={() => {
-                                            setProjects(projects.map(p => 
-                                              p.id === project.id 
-                                                ? {
-                                                    ...p,
-                                                    objects: p.objects.map(o => 
-                                                      o.id === obj.id 
-                                                        ? { ...o, executiveDocumentation: !o.executiveDocumentation }
-                                                        : o
-                                                    )
-                                                  }
-                                                : p
-                                            ));
-                                          }}
-                                        >
-                                          {obj.executiveDocumentation ? 'Готово' : 'Не готово'}
-                                        </Badge>
-                                      </TableCell>
-                                      <TableCell>
-                                        <Badge 
+                                <DynamicObjectsTable
+                                  objects={filterObjects(project.objects)}
+                                  stages={project.stages}
+                                  columnConfig={columnConfig}
+                                  selectedObjects={selectedObjects}
+                                  onToggleObject={handleToggleObject}
+                                  onSelectAll={() => handleSelectAll(project.id)}
+                                  onEdit={(obj) => openEditObjectDialog(project.id, obj)}
+                                  onDelete={(objectId) => handleDeleteObject(project.id, objectId)}
+                                />
+                              ) : (
+                                <Badge 
                                           variant={obj.constructionWork ? 'default' : 'secondary'} 
                                           className="text-xs cursor-pointer hover:opacity-80 transition-opacity"
                                           onClick={() => {
@@ -2030,51 +1901,6 @@ const Index = () => {
                                           }}
                                         >
                                           {getWorkStatusText(obj.workStatus || 'not-started')}
-                                        </Badge>
-                                      </TableCell>
-                                      <TableCell className="text-xs max-w-[200px]">{obj.notes || '-'}</TableCell>
-                                      <TableCell className="text-xs max-w-[200px]">
-                                        {obj.messengerLink ? (
-                                          <a 
-                                            href={obj.messengerLink} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            className="text-primary hover:underline flex items-center gap-1"
-                                          >
-                                            <Icon name="MessageCircle" size={14} />
-                                            Открыть
-                                          </a>
-                                        ) : '-'}
-                                      </TableCell>
-                                      <TableCell className="text-xs">{obj.operator || '-'}</TableCell>
-                                      <TableCell className="text-xs">{obj.connectionType || '-'}</TableCell>
-                                      <TableCell className="text-xs">{obj.tariffCost ? `${obj.tariffCost.toLocaleString('ru-RU')} ₽` : '-'}</TableCell>
-                                      <TableCell>
-                                        <div className="flex gap-1">
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8"
-                                            onClick={() => openEditObjectDialog(project.id, obj)}
-                                          >
-                                            <Icon name="Pencil" size={14} />
-                                          </Button>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-destructive hover:text-destructive"
-                                            onClick={() => handleDeleteObject(project.id, obj.id)}
-                                          >
-                                            <Icon name="Trash2" size={14} />
-                                          </Button>
-                                        </div>
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
-                            </div>
-                              ) : (
                                 <div className="text-center py-8 text-muted-foreground">
                                   <Icon name="Filter" className="mx-auto mb-2" size={32} />
                                   <p>Нет объектов, соответствующих выбранному фильтру</p>
@@ -2945,6 +2771,43 @@ const Index = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ColumnSettings
+        isOpen={isColumnSettingsOpen}
+        onClose={() => setIsColumnSettingsOpen(false)}
+        columns={columnConfig}
+        onSave={(newConfig) => {
+          setColumnConfig(newConfig);
+          setIsColumnSettingsOpen(false);
+        }}
+      />
+
+      <ObjectEditDialog
+        object={editingObject}
+        stages={currentProjectId ? projects.find(p => p.id === currentProjectId)?.stages || [] : []}
+        violationOptions={KOAP_VIOLATIONS}
+        isOpen={isObjectDialogOpen}
+        onClose={() => {
+          setIsObjectDialogOpen(false);
+          setEditingObject(null);
+        }}
+        onSave={(updatedObject) => {
+          if (currentProjectId) {
+            setProjects(projects.map(p =>
+              p.id === currentProjectId
+                ? {
+                    ...p,
+                    objects: p.objects.map(obj =>
+                      obj.id === updatedObject.id ? updatedObject : obj
+                    )
+                  }
+                : p
+            ));
+          }
+          setIsObjectDialogOpen(false);
+          setEditingObject(null);
+        }}
+      />
     </div>
   );
 };
