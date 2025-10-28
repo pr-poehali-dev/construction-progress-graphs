@@ -1,9 +1,10 @@
+import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
-import { ColumnConfig } from './ColumnSettings';
+import { ColumnConfig, ColumnGroup } from './ColumnSettings';
 
 interface ProjectObject {
   id: string;
@@ -46,6 +47,7 @@ interface DynamicObjectsTableProps {
   objects: ProjectObject[];
   stages: Stage[];
   columnConfig: ColumnConfig[];
+  columnGroups: ColumnGroup[];
   selectedObjects: Set<string>;
   onToggleObject: (objectId: string) => void;
   onSelectAll: () => void;
@@ -57,15 +59,48 @@ export function DynamicObjectsTable({
   objects,
   stages,
   columnConfig,
+  columnGroups,
   selectedObjects,
   onToggleObject,
   onSelectAll,
   onEdit,
   onDelete,
 }: DynamicObjectsTableProps) {
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
   const visibleColumns = columnConfig
     .filter(col => col.visible)
     .sort((a, b) => a.order - b.order);
+
+  const toggleGroupCollapse = (groupId: string) => {
+    const newCollapsed = new Set(collapsedGroups);
+    if (newCollapsed.has(groupId)) {
+      newCollapsed.delete(groupId);
+    } else {
+      newCollapsed.add(groupId);
+    }
+    setCollapsedGroups(newCollapsed);
+  };
+
+  const getGroupColumns = (groupId: string) => {
+    return visibleColumns.filter(col => col.groupId === groupId);
+  };
+
+  const getUngroupedColumns = () => {
+    return visibleColumns.filter(col => !col.groupId);
+  };
+
+  const getVisibleGroupColumns = (groupId: string) => {
+    if (collapsedGroups.has(groupId)) return [];
+    return getGroupColumns(groupId);
+  };
+
+  const sortedGroups = [...columnGroups].sort((a, b) => a.order - b.order);
+
+  const allVisibleColumns = [
+    ...sortedGroups.flatMap(group => getVisibleGroupColumns(group.id)),
+    ...getUngroupedColumns()
+  ];
 
   const renderCellContent = (column: ColumnConfig, obj: ProjectObject) => {
     switch (column.id) {
@@ -224,21 +259,73 @@ export function DynamicObjectsTable({
 
   const allSelected = objects.length > 0 && objects.every(obj => selectedObjects.has(obj.id));
 
+  const sortedGroups = [...columnGroups].sort((a, b) => a.order - b.order);
+
+  const allVisibleColumns = [
+    ...sortedGroups.flatMap(group => getVisibleGroupColumns(group.id)),
+    ...getUngroupedColumns()
+  ];
+
   return (
     <div className="overflow-x-auto rounded-lg border border-border">
       <Table>
         <TableHeader>
-          <TableRow>
-            {visibleColumns.map(column => (
-              <TableHead key={column.id} className={getColumnWidth(column.id)}>
-                {column.id === 'checkbox' ? (
+          {sortedGroups.length > 0 && (
+            <TableRow>
+              {visibleColumns.some(col => col.id === 'checkbox') && (
+                <TableHead className="w-[50px]" rowSpan={2}>
                   <Checkbox
                     checked={allSelected}
                     onCheckedChange={onSelectAll}
                   />
-                ) : (
-                  column.label
-                )}
+                </TableHead>
+              )}
+              {sortedGroups.map(group => {
+                const groupCols = getGroupColumns(group.id);
+                if (groupCols.length === 0) return null;
+                const isCollapsed = collapsedGroups.has(group.id);
+                return (
+                  <TableHead 
+                    key={group.id} 
+                    colSpan={isCollapsed ? 1 : groupCols.length}
+                    className="bg-muted/50 border-x-2 border-muted cursor-pointer hover:bg-muted/70 transition-colors text-center"
+                    onClick={() => toggleGroupCollapse(group.id)}
+                  >
+                    <div className="flex items-center justify-center gap-2 font-semibold">
+                      <Icon name={isCollapsed ? "ChevronRight" : "ChevronDown"} size={14} />
+                      {group.label}
+                      <span className="text-xs font-normal text-muted-foreground">({groupCols.length})</span>
+                    </div>
+                  </TableHead>
+                );
+              })}
+              {getUngroupedColumns().filter(col => col.id !== 'checkbox').map(column => (
+                <TableHead key={column.id} className={getColumnWidth(column.id)} rowSpan={2}>
+                  {column.label}
+                </TableHead>
+              ))}
+            </TableRow>
+          )}
+          <TableRow>
+            {sortedGroups.length === 0 && visibleColumns.some(col => col.id === 'checkbox') && (
+              <TableHead className="w-[50px]">
+                <Checkbox
+                  checked={allSelected}
+                  onCheckedChange={onSelectAll}
+                />
+              </TableHead>
+            )}
+            {sortedGroups.flatMap(group => {
+              const groupCols = getVisibleGroupColumns(group.id);
+              return groupCols.map(column => (
+                <TableHead key={column.id} className={`${getColumnWidth(column.id)} bg-muted/20`}>
+                  {column.label}
+                </TableHead>
+              ));
+            })}
+            {sortedGroups.length === 0 && getUngroupedColumns().filter(col => col.id !== 'checkbox').map(column => (
+              <TableHead key={column.id} className={getColumnWidth(column.id)}>
+                {column.label}
               </TableHead>
             ))}
           </TableRow>
@@ -246,7 +333,7 @@ export function DynamicObjectsTable({
         <TableBody>
           {objects.map(obj => (
             <TableRow key={obj.id} className={selectedObjects.has(obj.id) ? 'bg-primary/5' : ''}>
-              {visibleColumns.map(column => (
+              {allVisibleColumns.map(column => (
                 <TableCell key={column.id}>
                   {renderCellContent(column, obj)}
                 </TableCell>

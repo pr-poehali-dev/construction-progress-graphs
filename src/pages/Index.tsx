@@ -18,7 +18,7 @@ import { ProjectStats } from '@/components/dashboard/ProjectStats';
 import { StageTimeline } from '@/components/dashboard/StageTimeline';
 import { ObjectTableRow } from '@/components/dashboard/ObjectTableRow';
 import { ObjectEditDialog } from '@/components/dashboard/ObjectEditDialog';
-import { ColumnSettings, ColumnConfig } from '@/components/dashboard/ColumnSettings';
+import { ColumnSettings, ColumnConfig, ColumnGroup } from '@/components/dashboard/ColumnSettings';
 import { DynamicObjectsTable } from '@/components/dashboard/DynamicObjectsTable';
 import { mockProjects, KOAP_VIOLATIONS, Project, ProjectObject } from '@/components/dashboard/mockData';
 
@@ -403,6 +403,10 @@ const Index = () => {
       { id: 'actions', label: 'Действия', visible: true, order: 29 },
     ];
   });
+  const [columnGroups, setColumnGroups] = useState<ColumnGroup[]>(() => {
+    const saved = localStorage.getItem('ui-state-columnGroups');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   useEffect(() => {
     localStorage.setItem('construction-projects', JSON.stringify(projects));
@@ -440,6 +444,10 @@ const Index = () => {
   useEffect(() => {
     localStorage.setItem('ui-state-columnConfig', JSON.stringify(columnConfig));
   }, [columnConfig]);
+
+  useEffect(() => {
+    localStorage.setItem('ui-state-columnGroups', JSON.stringify(columnGroups));
+  }, [columnGroups]);
 
   useEffect(() => {
     localStorage.setItem('ui-state-isBulkStatusDialogOpen', String(isBulkStatusDialogOpen));
@@ -1732,6 +1740,7 @@ const Index = () => {
                                   objects={filterObjects(project.objects)}
                                   stages={project.stages}
                                   columnConfig={columnConfig}
+                                  columnGroups={columnGroups}
                                   selectedObjects={selectedObjects}
                                   onToggleObject={handleToggleObject}
                                   onSelectAll={() => handleSelectAll(project.id)}
@@ -2614,8 +2623,10 @@ const Index = () => {
         isOpen={isColumnSettingsOpen}
         onClose={() => setIsColumnSettingsOpen(false)}
         columns={columnConfig}
-        onSave={(newConfig) => {
+        groups={columnGroups}
+        onSave={(newConfig, newGroups) => {
           setColumnConfig(newConfig);
+          setColumnGroups(newGroups);
           setIsColumnSettingsOpen(false);
         }}
       />
