@@ -1757,6 +1757,18 @@ const Index = () => {
                                   onSelectAll={() => handleSelectAll(project.id)}
                                   onEdit={(obj) => openEditObjectDialog(project.id, obj)}
                                   onDelete={(objectId) => handleDeleteObject(project.id, objectId)}
+                                  onStatusChange={(objectId, newStatus) => {
+                                    setProjects(projects.map(p =>
+                                      p.id === project.id
+                                        ? {
+                                            ...p,
+                                            objects: p.objects.map(obj =>
+                                              obj.id === objectId ? { ...obj, workStatus: newStatus } : obj
+                                            )
+                                          }
+                                        : p
+                                    ));
+                                  }}
                                 />
                               ) : (
                                 <div className="text-center py-8 text-muted-foreground">

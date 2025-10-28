@@ -3,7 +3,8 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
-import { getStatusBadgeClass, getStatusLabel, WorkStatus } from '@/lib/statusConfig';
+import { WorkStatus } from '@/lib/statusConfig';
+import { StatusSelector } from './StatusSelector';
 
 interface ProjectObject {
   id: string;
@@ -41,9 +42,10 @@ interface ObjectTableRowProps {
   obj: ProjectObject;
   onEdit: (obj: ProjectObject) => void;
   onExport: (obj: ProjectObject) => void;
+  onStatusChange: (objectId: string, newStatus: WorkStatus) => void;
 }
 
-export function ObjectTableRow({ obj, onEdit, onExport }: ObjectTableRowProps) {
+export function ObjectTableRow({ obj, onEdit, onExport, onStatusChange }: ObjectTableRowProps) {
 
 
   return (
@@ -112,7 +114,10 @@ export function ObjectTableRow({ obj, onEdit, onExport }: ObjectTableRowProps) {
         ) : '-'}
       </TableCell>
       <TableCell>
-        <Badge className={getStatusBadgeClass(obj.workStatus)}>{getStatusLabel(obj.workStatus)}</Badge>
+        <StatusSelector
+          value={obj.workStatus}
+          onChange={(newStatus) => onStatusChange(obj.id, newStatus)}
+        />
       </TableCell>
       <TableCell>
         <div className="max-w-xs truncate" title={obj.notes}>{obj.notes || '-'}</div>

@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import { ColumnConfig, ColumnGroup } from './ColumnSettings';
-import { getStatusColor, getStatusLabel, WorkStatus } from '@/lib/statusConfig';
+import { WorkStatus } from '@/lib/statusConfig';
+import { StatusSelector } from './StatusSelector';
 
 interface ProjectObject {
   id: string;
@@ -54,6 +55,7 @@ interface DynamicObjectsTableProps {
   onSelectAll: () => void;
   onEdit: (object: ProjectObject) => void;
   onDelete: (objectId: string) => void;
+  onStatusChange: (objectId: string, newStatus: WorkStatus) => void;
 }
 
 export function DynamicObjectsTable({
@@ -66,6 +68,7 @@ export function DynamicObjectsTable({
   onSelectAll,
   onEdit,
   onDelete,
+  onStatusChange,
 }: DynamicObjectsTableProps) {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
@@ -185,7 +188,12 @@ export function DynamicObjectsTable({
           </a>
         ) : '-';
       case 'workStatus':
-        return <Badge className={getStatusColor(obj.workStatus)}>{getStatusLabel(obj.workStatus)}</Badge>;
+        return (
+          <StatusSelector
+            value={obj.workStatus}
+            onChange={(newStatus) => onStatusChange(obj.id, newStatus)}
+          />
+        );
       case 'notes':
         return obj.notes || '-';
       case 'messengerLink':
