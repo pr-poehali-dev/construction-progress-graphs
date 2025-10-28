@@ -259,13 +259,6 @@ export function DynamicObjectsTable({
 
   const allSelected = objects.length > 0 && objects.every(obj => selectedObjects.has(obj.id));
 
-  const sortedGroups = [...columnGroups].sort((a, b) => a.order - b.order);
-
-  const allVisibleColumns = [
-    ...sortedGroups.flatMap(group => getVisibleGroupColumns(group.id)),
-    ...getUngroupedColumns()
-  ];
-
   return (
     <div className="overflow-x-auto rounded-lg border border-border">
       <Table>
