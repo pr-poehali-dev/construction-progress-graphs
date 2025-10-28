@@ -9,7 +9,7 @@ export interface StatusOption {
   borderClass: string;
 }
 
-export const STATUS_OPTIONS: StatusOption[] = [
+const DEFAULT_STATUS_OPTIONS: StatusOption[] = [
   {
     value: 'yes',
     label: 'Да',
@@ -52,8 +52,48 @@ export const STATUS_OPTIONS: StatusOption[] = [
   },
 ];
 
+let cachedStatusOptions: StatusOption[] | null = null;
+
+export const loadStatusOptions = (): StatusOption[] => {
+  if (cachedStatusOptions) return cachedStatusOptions;
+  
+  try {
+    const saved = localStorage.getItem('status-options');
+    if (saved) {
+      cachedStatusOptions = JSON.parse(saved);
+      return cachedStatusOptions!;
+    }
+  } catch (error) {
+    console.error('Ошибка загрузки настроек статусов:', error);
+  }
+  
+  cachedStatusOptions = DEFAULT_STATUS_OPTIONS;
+  return cachedStatusOptions;
+};
+
+export const saveStatusOptions = (options: StatusOption[]): void => {
+  try {
+    localStorage.setItem('status-options', JSON.stringify(options));
+    cachedStatusOptions = options;
+  } catch (error) {
+    console.error('Ошибка сохранения настроек статусов:', error);
+  }
+};
+
+export const resetStatusOptions = (): void => {
+  try {
+    localStorage.removeItem('status-options');
+    cachedStatusOptions = DEFAULT_STATUS_OPTIONS;
+  } catch (error) {
+    console.error('Ошибка сброса настроек статусов:', error);
+  }
+};
+
+export const STATUS_OPTIONS = loadStatusOptions();
+
 export const getStatusOption = (status: WorkStatus): StatusOption => {
-  return STATUS_OPTIONS.find(opt => opt.value === status) || STATUS_OPTIONS[0];
+  const options = loadStatusOptions();
+  return options.find(opt => opt.value === status) || options[0];
 };
 
 export const getStatusColor = (status: WorkStatus): string => {

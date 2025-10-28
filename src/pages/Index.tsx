@@ -2645,9 +2645,8 @@ const Index = () => {
       <StatusManager
         isOpen={isStatusManagerOpen}
         onClose={() => setIsStatusManagerOpen(false)}
-        onSave={(statuses) => {
-          console.log('Сохранены новые статусы:', statuses);
-          setIsStatusManagerOpen(false);
+        onSave={() => {
+          window.location.reload();
         }}
       />
 

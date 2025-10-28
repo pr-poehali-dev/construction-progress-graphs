@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
-import { STATUS_OPTIONS, StatusOption, WorkStatus } from '@/lib/statusConfig';
+import { loadStatusOptions, saveStatusOptions, resetStatusOptions, StatusOption, WorkStatus } from '@/lib/statusConfig';
 
 interface StatusManagerProps {
   isOpen: boolean;
@@ -14,9 +14,15 @@ interface StatusManagerProps {
 }
 
 export function StatusManager({ isOpen, onClose, onSave }: StatusManagerProps) {
-  const [statuses, setStatuses] = useState<StatusOption[]>(STATUS_OPTIONS);
+  const [statuses, setStatuses] = useState<StatusOption[]>(() => loadStatusOptions());
   const [editingId, setEditingId] = useState<WorkStatus | null>(null);
   const [editLabel, setEditLabel] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setStatuses(loadStatusOptions());
+    }
+  }, [isOpen]);
 
   const handleEditStart = (status: StatusOption) => {
     setEditingId(status.value);
@@ -33,8 +39,15 @@ export function StatusManager({ isOpen, onClose, onSave }: StatusManagerProps) {
   };
 
   const handleSave = () => {
+    saveStatusOptions(statuses);
     onSave(statuses);
     onClose();
+  };
+
+  const handleReset = () => {
+    resetStatusOptions();
+    const defaultStatuses = loadStatusOptions();
+    setStatuses(defaultStatuses);
   };
 
   const colorOptions = [
@@ -112,13 +125,19 @@ export function StatusManager({ isOpen, onClose, onSave }: StatusManagerProps) {
           ))}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Отмена
+        <DialogFooter className="flex justify-between">
+          <Button variant="ghost" onClick={handleReset}>
+            <Icon name="RotateCcw" size={16} className="mr-2" />
+            Сбросить
           </Button>
-          <Button onClick={handleSave}>
-            Сохранить изменения
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose}>
+              Отмена
+            </Button>
+            <Button onClick={handleSave}>
+              Сохранить изменения
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
