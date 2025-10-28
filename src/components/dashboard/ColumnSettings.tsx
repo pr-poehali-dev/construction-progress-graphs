@@ -181,12 +181,12 @@ export function ColumnSettings({ isOpen, onClose, columns, groups, onSave }: Col
                               setEditingGroupId(null);
                             }
                           }}
-                          className="flex-1 px-2 py-1 text-sm border rounded"
+                          className="flex-1 px-2 py-1 text-sm border rounded text-foreground bg-background"
                           autoFocus
                         />
                       ) : (
                         <span 
-                          className="flex-1 font-medium text-sm cursor-pointer"
+                          className="flex-1 font-medium text-sm cursor-pointer text-foreground"
                           onClick={() => {
                             setEditingGroupId(group.id);
                             setNewGroupName(group.label);
@@ -209,7 +209,7 @@ export function ColumnSettings({ isOpen, onClose, columns, groups, onSave }: Col
                         {groupColumns.map((column, index) => (
                           <div
                             key={column.id}
-                            className="flex items-center gap-2 p-2 rounded bg-card hover:bg-accent transition-colors"
+                            className="flex items-center gap-2 p-2 rounded bg-card hover:bg-accent transition-colors text-foreground"
                           >
                             <Checkbox
                               id={`${group.id}-${column.id}`}
@@ -218,7 +218,7 @@ export function ColumnSettings({ isOpen, onClose, columns, groups, onSave }: Col
                             />
                             <label
                               htmlFor={`${group.id}-${column.id}`}
-                              className="flex-1 text-sm cursor-pointer"
+                              className="flex-1 text-sm cursor-pointer text-foreground"
                             >
                               {column.label}
                             </label>
@@ -251,7 +251,7 @@ export function ColumnSettings({ isOpen, onClose, columns, groups, onSave }: Col
                     onDragStart={() => handleDragStart(index)}
                     onDragOver={(e) => handleDragOver(e, index)}
                     onDragEnd={handleDragEnd}
-                    className={`flex items-center gap-3 p-3 rounded-lg border bg-card cursor-move hover:bg-accent transition-colors ${
+                    className={`flex items-center gap-3 p-3 rounded-lg border bg-card cursor-move hover:bg-accent transition-colors text-foreground ${
                       draggedIndex === index ? 'opacity-50' : ''
                     }`}
                   >
@@ -263,13 +263,13 @@ export function ColumnSettings({ isOpen, onClose, columns, groups, onSave }: Col
                     />
                     <label
                       htmlFor={column.id}
-                      className="flex-1 text-sm cursor-pointer"
+                      className="flex-1 text-sm cursor-pointer text-foreground"
                     >
                       {column.label}
                     </label>
                     {localGroups.length > 0 && (
                       <select
-                        className="text-xs border rounded px-2 py-1"
+                        className="text-xs border rounded px-2 py-1 text-foreground bg-background"
                         value=""
                         onChange={(e) => {
                           if (e.target.value) {
