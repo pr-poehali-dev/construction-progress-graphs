@@ -20,7 +20,7 @@ export interface ProjectObject {
   violationRecording: boolean;
   violationTypes: string[];
   documentationUrl: string;
-  workStatus: 'not-started' | 'in-progress' | 'paused' | 'completed';
+  workStatus: 'yes' | 'no' | 'in-progress' | 'paused' | 'completed';
   notes: string;
   messengerLink: string;
   stageId?: string;
@@ -134,7 +134,7 @@ export const mockProjects: Project[] = [
         violationRecording: false,
         violationTypes: [],
         documentationUrl: '',
-        workStatus: 'not-started',
+        workStatus: 'no',
         notes: 'Требуется согласование ТУ',
         messengerLink: '',
         operator: 'Мегафон',

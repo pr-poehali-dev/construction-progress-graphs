@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
+import { STATUS_OPTIONS, WorkStatus } from '@/lib/statusConfig';
 
 interface ProjectObject {
   id: string;
@@ -31,7 +32,7 @@ interface ProjectObject {
   violationRecording: boolean;
   violationTypes: string[];
   documentationUrl: string;
-  workStatus: 'not-started' | 'in-progress' | 'paused' | 'completed';
+  workStatus: WorkStatus;
   notes: string;
   messengerLink: string;
   stageId?: string;
@@ -187,10 +188,11 @@ export function ObjectEditDialog({ object, stages, violationOptions, isOpen, onC
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="not-started">Не начато</SelectItem>
-                  <SelectItem value="in-progress">В работе</SelectItem>
-                  <SelectItem value="paused">Приостановлено</SelectItem>
-                  <SelectItem value="completed">Завершено</SelectItem>
+                  {STATUS_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

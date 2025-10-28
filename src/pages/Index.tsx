@@ -20,6 +20,7 @@ import { ObjectTableRow } from '@/components/dashboard/ObjectTableRow';
 import { ObjectEditDialog } from '@/components/dashboard/ObjectEditDialog';
 import { ColumnSettings, ColumnConfig, ColumnGroup } from '@/components/dashboard/ColumnSettings';
 import { DynamicObjectsTable } from '@/components/dashboard/DynamicObjectsTable';
+import { StatusManager } from '@/components/dashboard/StatusManager';
 import { mockProjects, KOAP_VIOLATIONS, Project, ProjectObject } from '@/components/dashboard/mockData';
 
 interface ProjectObject {
@@ -366,6 +367,7 @@ const Index = () => {
     return saved || 'all';
   });
   const [isColumnSettingsOpen, setIsColumnSettingsOpen] = useState(false);
+  const [isStatusManagerOpen, setIsStatusManagerOpen] = useState(false);
   const [columnConfig, setColumnConfig] = useState<ColumnConfig[]>(() => {
     const saved = localStorage.getItem('ui-state-columnConfig');
     if (saved) return JSON.parse(saved);
@@ -1642,6 +1644,15 @@ const Index = () => {
                               <Button
                                 size="sm"
                                 variant="outline"
+                                onClick={() => setIsStatusManagerOpen(true)}
+                                className="gap-2"
+                              >
+                                <Icon name="Tag" size={14} />
+                                Статусы
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
                                 onClick={() => exportToExcel(project.id)}
                                 className="gap-2"
                                 disabled={!project.objects || project.objects.length === 0}
@@ -2628,6 +2639,15 @@ const Index = () => {
           setColumnConfig(newConfig);
           setColumnGroups(newGroups);
           setIsColumnSettingsOpen(false);
+        }}
+      />
+
+      <StatusManager
+        isOpen={isStatusManagerOpen}
+        onClose={() => setIsStatusManagerOpen(false)}
+        onSave={(statuses) => {
+          console.log('Сохранены новые статусы:', statuses);
+          setIsStatusManagerOpen(false);
         }}
       />
 

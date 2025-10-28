@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
+import { getStatusBadgeClass, getStatusLabel, WorkStatus } from '@/lib/statusConfig';
 
 interface ProjectObject {
   id: string;
@@ -26,7 +27,7 @@ interface ProjectObject {
   violationRecording: boolean;
   violationTypes: string[];
   documentationUrl: string;
-  workStatus: 'not-started' | 'in-progress' | 'paused' | 'completed';
+  workStatus: WorkStatus;
   notes: string;
   messengerLink: string;
   stageId?: string;
@@ -43,25 +44,7 @@ interface ObjectTableRowProps {
 }
 
 export function ObjectTableRow({ obj, onEdit, onExport }: ObjectTableRowProps) {
-  const getWorkStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'bg-green-500/10 text-green-700 border-green-500/20';
-      case 'in-progress': return 'bg-blue-500/10 text-blue-700 border-blue-500/20';
-      case 'paused': return 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20';
-      case 'not-started': return 'bg-gray-500/10 text-gray-700 border-gray-500/20';
-      default: return '';
-    }
-  };
 
-  const getWorkStatusText = (status: string) => {
-    switch (status) {
-      case 'completed': return 'Завершено';
-      case 'in-progress': return 'В работе';
-      case 'paused': return 'Приостановлено';
-      case 'not-started': return 'Не начато';
-      default: return '';
-    }
-  };
 
   return (
     <TableRow>
@@ -129,7 +112,7 @@ export function ObjectTableRow({ obj, onEdit, onExport }: ObjectTableRowProps) {
         ) : '-'}
       </TableCell>
       <TableCell>
-        <Badge className={getWorkStatusColor(obj.workStatus)}>{getWorkStatusText(obj.workStatus)}</Badge>
+        <Badge className={getStatusBadgeClass(obj.workStatus)}>{getStatusLabel(obj.workStatus)}</Badge>
       </TableCell>
       <TableCell>
         <div className="max-w-xs truncate" title={obj.notes}>{obj.notes || '-'}</div>

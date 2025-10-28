@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import { ColumnConfig, ColumnGroup } from './ColumnSettings';
+import { getStatusColor, getStatusLabel, WorkStatus } from '@/lib/statusConfig';
 
 interface ProjectObject {
   id: string;
@@ -28,7 +29,7 @@ interface ProjectObject {
   violationRecording: boolean;
   violationTypes: string[];
   documentationUrl: string;
-  workStatus: 'not-started' | 'in-progress' | 'paused' | 'completed';
+  workStatus: WorkStatus;
   notes: string;
   messengerLink: string;
   stageId?: string;
@@ -184,19 +185,7 @@ export function DynamicObjectsTable({
           </a>
         ) : '-';
       case 'workStatus':
-        const statusColors = {
-          'not-started': 'bg-gray-500',
-          'in-progress': 'bg-blue-500',
-          'paused': 'bg-orange-500',
-          'completed': 'bg-green-500',
-        };
-        const statusLabels = {
-          'not-started': 'Не начато',
-          'in-progress': 'В работе',
-          'paused': 'Приостановлено',
-          'completed': 'Завершено',
-        };
-        return <Badge className={statusColors[obj.workStatus]}>{statusLabels[obj.workStatus]}</Badge>;
+        return <Badge className={getStatusColor(obj.workStatus)}>{getStatusLabel(obj.workStatus)}</Badge>;
       case 'notes':
         return obj.notes || '-';
       case 'messengerLink':
